@@ -11,9 +11,9 @@ import { getGroundTruth, getBaseline } from "../mcp-servers/contract-eval-mcp/sr
 
 describe("contract-eval-mcp engine", () => {
   describe("getGroundTruth", () => {
-    it("returns 20 ground truth entries", () => {
+    it("returns 57 ground truth entries", () => {
       const gt = getGroundTruth();
-      expect(gt).toHaveLength(20);
+      expect(gt).toHaveLength(57);
     });
 
     it("each entry has required fields", () => {
@@ -50,7 +50,7 @@ describe("contract-eval-mcp engine", () => {
     it("returns a well-formed baseline eval result", () => {
       const baseline = getBaseline();
       expect(baseline.version).toBe("v1.2");
-      expect(baseline.total_cases).toBe(20);
+      expect(baseline.total_cases).toBe(57);
       expect(baseline.passed).toBeGreaterThan(0);
       expect(baseline.accuracy).toBeGreaterThan(0);
       expect(baseline.quality_gate).toMatch(/^(PASS|FAIL)$/);

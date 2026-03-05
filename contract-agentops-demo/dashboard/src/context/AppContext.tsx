@@ -10,12 +10,15 @@ export type ViewName =
   | "drift"
   | "feedback";
 
+export type DemoMode = "simulated" | "real";
+
 interface AppState {
   activeView: ViewName;
   setActiveView: (view: ViewName) => void;
   contractCount: number;
   setContractCount: (n: number) => void;
-  demoMode: string;
+  demoMode: DemoMode;
+  setDemoMode: (mode: DemoMode) => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -23,10 +26,11 @@ const AppContext = createContext<AppState | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [activeView, setActiveView] = useState<ViewName>("design");
   const [contractCount, setContractCount] = useState(0);
+  const [demoMode, setDemoMode] = useState<DemoMode>("simulated");
 
   return (
     <AppContext.Provider
-      value={{ activeView, setActiveView, contractCount, setContractCount, demoMode: "simulated" }}
+      value={{ activeView, setActiveView, contractCount, setContractCount, demoMode, setDemoMode }}
     >
       {children}
     </AppContext.Provider>

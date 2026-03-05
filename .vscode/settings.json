@@ -19,7 +19,6 @@
  "[markdown]": {
  "editor.wordWrap": "on"
  },
- "css.lint.unknownAtRules": "ignore",
  "github-actions.workflows.pinned.refresh.enabled": false,
  "github-actions.expression-validation.enabled": false,
  "yaml.validate": true,
@@ -37,5 +36,5 @@
  "chat.viewProgressBadge.enabled": true,
  "inlineChat.enableV2": true,
 "inlineChat.notebookAgent": true,
-"agentx.mode": "local"
+"agentx.mode": "github"
 }

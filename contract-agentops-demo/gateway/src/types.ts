@@ -9,7 +9,8 @@ export type ContractStatus =
   | "awaiting_review"
   | "approved"
   | "rejected"
-  | "archived";
+  | "archived"
+  | "failed";
 
 export interface Contract {
   readonly id: string;
@@ -20,6 +21,7 @@ export interface Contract {
   classification_confidence?: number;
   submitted_at: string;
   completed_at?: string;
+  error_message?: string;
 }
 
 // --- Extraction ---
@@ -90,7 +92,8 @@ export type AuditAction =
   | "escalated"
   | "approved"
   | "rejected"
-  | "request_changes";
+  | "request_changes"
+  | "error";
 
 export interface AuditEntry {
   readonly id: string;
@@ -98,6 +101,7 @@ export interface AuditEntry {
   readonly agent: AuditAgent;
   readonly action: AuditAction;
   readonly reasoning: string;
+  readonly description?: string;
   readonly timestamp: string;
 }
 
@@ -202,7 +206,8 @@ export type PipelineStage =
   | "approved"
   | "rejected"
   | "pipeline_complete"
-  | "pipeline_error";
+  | "pipeline_error"
+  | "pipeline_failed";
 
 export interface WebSocketEvent {
   readonly event: "agent_step_complete" | "pipeline_status" | "error";

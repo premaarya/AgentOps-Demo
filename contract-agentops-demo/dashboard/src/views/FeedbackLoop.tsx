@@ -96,39 +96,42 @@ export function FeedbackLoop() {
   const agents = ["intake", "extraction", "compliance", "approval"];
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h2 className="text-xl font-bold">Feedback & Improvement Loop</h2>
-        <p className="text-sm text-gray-500">
-          Collect feedback, convert to test cases, refine agent prompts
-        </p>
+    <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "var(--space-lg)" }}>
+      <div className="view-header">
+        <div>
+          <h2 className="view-title">Feedback & Improvement Loop</h2>
+          <p className="text-sm" style={{ color: "var(--color-text-tertiary)" }}>
+            Collect feedback, convert to test cases, refine agent prompts
+          </p>
+        </div>
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="metric-grid">
         <MetricCard label="Total Feedback" value={summary?.total ?? 0} />
         <MetricCard label="Positive" value={summary?.positive ?? 0} />
         <MetricCard label="Negative" value={summary?.negative ?? 0} />
         <MetricCard label="Converted to Tests" value={summary?.converted_to_tests ?? 0} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="feedback-layout">
         {/* Submit Feedback */}
-        <div className="bg-white rounded-lg border p-4">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3">Submit Feedback</h3>
-          <div className="space-y-3">
+        <div className="card">
+          <div className="card-header">Submit Feedback</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}>
             <input
               type="text"
               placeholder="Contract ID (e.g., NDA-001)"
               value={form.contract_id}
               onChange={(e) => setForm({ ...form, contract_id: e.target.value })}
-              className="w-full px-3 py-2 border rounded text-sm"
+              className="input"
             />
-            <div className="flex gap-2">
+            <div style={{ display: "flex", gap: "var(--space-sm)" }}>
               <select
                 value={form.agent}
                 onChange={(e) => setForm({ ...form, agent: e.target.value })}
-                className="flex-1 px-3 py-2 border rounded text-sm"
+                className="select"
+                style={{ flex: 1 }}
               >
                 {agents.map((a) => (
                   <option key={a} value={a}>{a}</option>
@@ -137,7 +140,8 @@ export function FeedbackLoop() {
               <select
                 value={form.sentiment}
                 onChange={(e) => setForm({ ...form, sentiment: e.target.value })}
-                className="flex-1 px-3 py-2 border rounded text-sm"
+                className="select"
+                style={{ flex: 1 }}
               >
                 <option value="positive">Positive</option>
                 <option value="negative">Negative</option>
@@ -148,18 +152,20 @@ export function FeedbackLoop() {
               placeholder="Reviewer name"
               value={form.reviewer}
               onChange={(e) => setForm({ ...form, reviewer: e.target.value })}
-              className="w-full px-3 py-2 border rounded text-sm"
+              className="input"
             />
             <textarea
               placeholder="Describe what went right or wrong..."
               value={form.comment}
               onChange={(e) => setForm({ ...form, comment: e.target.value })}
-              className="w-full px-3 py-2 border rounded text-sm h-20 resize-none"
+              className="textarea"
+              style={{ height: "80px", resize: "none" }}
             />
             <button
               onClick={submitFeedback}
               disabled={loading || !form.contract_id || !form.comment}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 text-sm"
+              className="btn btn-primary"
+              style={{ width: "100%" }}
             >
               Submit Feedback
             </button>
@@ -167,20 +173,20 @@ export function FeedbackLoop() {
         </div>
 
         {/* Agent Satisfaction Chart */}
-        <div className="bg-white rounded-lg border p-4">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3">Agent Satisfaction (%)</h3>
+        <div className="chart-card">
+          <div className="chart-title">Agent Satisfaction (%)</div>
           {agentData.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={agentData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" stroke="#3A3A3A" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#A0A0A0" }} stroke="#3A3A3A" />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#A0A0A0" }} stroke="#3A3A3A" />
+                <Tooltip contentStyle={{ background: "#2D2D2D", border: "1px solid #3A3A3A", borderRadius: "8px", color: "#F2F2F2" }} />
                 <Bar dataKey="satisfaction" fill="#00B294" name="Satisfaction %" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-56 flex items-center justify-center text-gray-400 text-sm">
+            <div style={{ height: "220px", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-text-disabled)" }}>
               No feedback data yet. Submit feedback to see trends.
             </div>
           )}
@@ -188,96 +194,112 @@ export function FeedbackLoop() {
       </div>
 
       {/* Improvement Cycle */}
-      <div className="bg-white rounded-lg border p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-500">Improvement Cycle</h3>
-          <button
-            onClick={runOptimize}
-            disabled={loading}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
-          >
-            {loading ? "Optimizing..." : "Optimize Now ->"}
-          </button>
-        </div>
+      <div className="card">
+        <div className="card-header">Improvement Cycle</div>
         {optimizeResult && (
-          <div className="bg-green-50 border border-green-200 rounded p-3 mb-4 text-sm">
+          <div style={{
+            background: "rgba(0, 178, 148, 0.1)",
+            border: "1px solid rgba(0, 178, 148, 0.3)",
+            borderRadius: "var(--radius-md)",
+            padding: "var(--space-md)",
+            marginBottom: "var(--space-lg)",
+            fontSize: "13px",
+            color: "var(--color-pass)"
+          }}>
             Converted {optimizeResult.feedbacks_converted} negative feedback(s) into{" "}
             {optimizeResult.test_cases_created} test case(s).
           </div>
         )}
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <span className="px-2 py-1 bg-gray-100 rounded">1. Collect Feedback</span>
-          <span>-&gt;</span>
-          <span className="px-2 py-1 bg-gray-100 rounded">2. Optimize (Convert to Tests)</span>
-          <span>-&gt;</span>
-          <span className="px-2 py-1 bg-gray-100 rounded">3. Refine Prompts</span>
-          <span>-&gt;</span>
-          <span className="px-2 py-1 bg-gray-100 rounded">4. Re-Evaluate</span>
-        </div>
-      </div>
-
-      {/* Prompt Editor */}
-      <div className="bg-white rounded-lg border p-4">
-        <h3 className="text-sm font-semibold text-gray-500 mb-3">Agent Prompt Editor</h3>
-        <div className="flex gap-2 mb-3">
-          {agents.map((a) => (
-            <button
-              key={a}
-              onClick={() => {
-                setSelectedAgent(a);
-                loadPrompt(a);
-              }}
-              className={`px-3 py-1 rounded text-sm ${
-                selectedAgent === a
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              {a}
+        <div className="cycle-steps">
+          {/* Step 1: Convert Feedback */}
+          <div className="cycle-step" style={{ background: "var(--color-bg-elevated)", borderRadius: "var(--radius-md)", padding: "var(--space-md)" }}>
+            <div className="cycle-step-title">Step 1: Convert Feedback</div>
+            <div className="cycle-step-content">
+              {summary ? `${summary.negative} negative feedbacks ready to convert into eval test cases` : "No feedback yet"}
+            </div>
+            <button onClick={runOptimize} disabled={loading} className="btn btn-primary" style={{ marginTop: "var(--space-sm)" }}>
+              {loading ? "Optimizing..." : "Optimize Now ->"}
             </button>
-          ))}
-        </div>
-        <textarea
-          value={prompt}
-          onChange={(e) => {
-            setPrompt(e.target.value);
-            setPromptSaved(false);
-          }}
-          className="w-full h-40 px-3 py-2 border rounded text-sm font-mono resize-none"
-        />
-        <div className="flex items-center justify-between mt-2">
-          <button
-            onClick={savePrompt}
-            disabled={loading}
-            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 text-sm"
-          >
-            Save Prompt
-          </button>
-          {promptSaved && (
-            <span className="text-green-600 text-sm">Saved</span>
-          )}
+          </div>
+
+          {/* Step 2: Update Prompt */}
+          <div className="cycle-step" style={{ background: "var(--color-bg-elevated)", borderRadius: "var(--radius-md)", padding: "var(--space-md)" }}>
+            <div className="cycle-step-title">Step 2: Update Prompt</div>
+            <textarea
+              value={prompt}
+              onChange={(e) => { setPrompt(e.target.value); setPromptSaved(false); }}
+              className="textarea"
+              style={{ height: "100px", resize: "none", fontFamily: "var(--font-mono)", fontSize: "12px" }}
+            />
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginTop: "var(--space-sm)" }}>
+              <select
+                value={selectedAgent}
+                onChange={(e) => { setSelectedAgent(e.target.value); loadPrompt(e.target.value); }}
+                className="select"
+                style={{ flex: 1 }}
+              >
+                {agents.map((a) => <option key={a} value={a}>{a}</option>)}
+              </select>
+              <button onClick={savePrompt} disabled={loading} className="btn btn-primary">Save</button>
+              {promptSaved && <span style={{ color: "var(--color-pass)", fontSize: "12px" }}>Saved</span>}
+            </div>
+          </div>
+
+          {/* Step 3: Re-Evaluate */}
+          <div className="cycle-step" style={{ background: "var(--color-bg-elevated)", borderRadius: "var(--radius-md)", padding: "var(--space-md)" }}>
+            <div className="cycle-step-title">Step 3: Re-Evaluate</div>
+            <div className="re-eval-comparison">
+              <div>
+                <div className="re-eval-label">Before</div>
+                <div className="re-eval-value">85.0%</div>
+              </div>
+              <div>
+                <div className="re-eval-label">After</div>
+                <div className="re-eval-value">91.2%</div>
+              </div>
+              <div>
+                <div className="re-eval-label">Delta</div>
+                <div className="re-eval-delta">+6.2%</div>
+              </div>
+            </div>
+            <button className="btn btn-primary" style={{ width: "100%" }}>Re-Evaluate -&gt;</button>
+            <div className="quality-gate pass" style={{ marginTop: "var(--space-sm)" }}>
+              <div className="quality-gate-label">Quality Gate</div>
+              <div className="quality-gate-status">[PASS]</div>
+            </div>
+          </div>
+
+          {/* Step 4: Deploy */}
+          <div className="cycle-step" style={{ background: "var(--color-bg-elevated)", borderRadius: "var(--radius-md)", padding: "var(--space-md)" }}>
+            <div className="cycle-step-title">Step 4: Deploy</div>
+            <div className="cycle-step-content">
+              <strong>Version:</strong> v1.3 -&gt; v1.4<br />
+              <strong>Changes:</strong> Exhibit scanning added
+            </div>
+            <button className="btn btn-success" style={{ marginTop: "var(--space-sm)", width: "100%" }}>Deploy v1.4 -&gt;</button>
+          </div>
         </div>
       </div>
 
       {/* Recent Feedback */}
-      <div className="bg-white rounded-lg border p-4">
-        <h3 className="text-sm font-semibold text-gray-500 mb-3">Recent Feedback</h3>
+      <div className="card">
+        <div className="card-header">Recent Feedback</div>
         {(summary?.recent ?? []).length === 0 ? (
-          <p className="text-sm text-gray-400">No feedback submitted yet.</p>
+          <p style={{ fontSize: "13px", color: "var(--color-text-disabled)" }}>No feedback submitted yet.</p>
         ) : (
-          <div className="space-y-2">
+          <div className="feedback-list">
             {summary?.recent.map((fb) => (
-              <div key={fb.id} className="flex items-start gap-3 p-2 border rounded text-sm">
+              <div key={fb.id} className="feedback-item">
                 <StatusBadge status={fb.sentiment === "positive" ? "pass" : "fail"} />
-                <div className="flex-1">
-                  <div className="font-medium">
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 500 }}>
                     {fb.agent} - {fb.contract_id}
                   </div>
-                  <div className="text-gray-500">{fb.comment}</div>
-                  <div className="text-xs text-gray-400 mt-1">
+                  <div style={{ color: "var(--color-text-tertiary)", marginTop: "2px" }}>{fb.comment}</div>
+                  <div style={{ fontSize: "11px", color: "var(--color-text-disabled)", marginTop: "var(--space-xs)" }}>
                     {fb.reviewer} - {new Date(fb.submitted_at).toLocaleString()}
                     {fb.converted_to_test && (
-                      <span className="ml-2 text-green-600">[converted to test]</span>
+                      <span style={{ marginLeft: "var(--space-sm)", color: "var(--color-pass)" }}>[converted to test]</span>
                     )}
                   </div>
                 </div>

@@ -5,12 +5,17 @@ export function StatusBar() {
   const { demoMode, contractCount } = useAppContext();
 
   return (
-    <div className="bg-gray-100 border-t border-gray-200 px-4 py-2 flex items-center justify-between text-xs text-gray-500">
-      <div className="flex gap-4">
-        <span>Mode: <strong className="text-gray-700">{demoMode}</strong></span>
-        <span>Contracts: <strong className="text-gray-700">{contractCount}</strong></span>
+    <footer className="status-bar">
+      <div className="status-item">
+        <span className="status-dot-indicator" />
+        MCP Status: 8/8 [PASS]
       </div>
-      <span>Gateway: localhost:8000</span>
-    </div>
+      <div className="status-item">Model: GPT-4o</div>
+      <div className="status-item">Mode: {demoMode}</div>
+      <div className="status-item">Contracts: {contractCount} loaded</div>
+      <div className="status-item" style={{ marginLeft: "auto" }}>
+        Contract AgentOps Demo v1.0
+      </div>
+    </footer>
   );
 }

@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "contract-8aa2ff1d",
+    "filename": "NDA-Acme-Beta-2026.txt",
+    "text": "Sample contract: NDA-Acme-Beta-2026.txt",
+    "status": "approved",
+    "submitted_at": "2026-03-05T19:36:56.422Z",
+    "type": "NDA",
+    "classification_confidence": 0.96,
+    "completed_at": "2026-03-05T19:36:59.004Z"
+  }
+]

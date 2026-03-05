@@ -1,6 +1,9 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import fastifyStatic from "@fastify/static";
 import websocket from "@fastify/websocket";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { appConfig, MCP_SERVERS } from "./config.js";
 import { initStores } from "./stores/contractStore.js";
 import { contractRoutes } from "./routes/contracts.js";
@@ -12,13 +15,21 @@ import { feedbackRoutes } from "./routes/feedback.js";
 import { deployRoutes } from "./routes/deploy.js";
 import { addWsClient } from "./websocket/workflowWs.js";
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 export async function startGateway(): Promise<void> {
   await initStores();
 
   const app = Fastify({ logger: appConfig.logLevel === "DEBUG" });
 
   await app.register(cors, {
-    origin: `http://localhost:${appConfig.dashboardPort}`,
+    origin: true,
+  });
+
+  // Serve the dashboard UI as static files
+  await app.register(fastifyStatic, {
+    root: resolve(__dirname, "../../ui"),
+    prefix: "/",
   });
 
   await app.register(websocket);

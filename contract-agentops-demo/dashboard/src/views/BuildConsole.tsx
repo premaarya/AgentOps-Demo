@@ -27,6 +27,14 @@ const MCP_SERVERS = [
       { name: "get_policy_rules", hint: "{}" },
     ],
   },
+  {
+    name: "contract-approval-mcp",
+    tools: [
+      { name: "route_approval", hint: '{"contract_id": "NDA-001", "risk_level": "medium"}' },
+      { name: "escalate_to_human", hint: '{"contract_id": "NDA-001", "reason": "Liability exceeds threshold"}' },
+      { name: "notify_stakeholder", hint: '{"contract_id": "NDA-001", "stakeholder": "legal@acme.com"}' },
+    ],
+  },
 ];
 
 export function BuildConsole() {
@@ -63,18 +71,21 @@ export function BuildConsole() {
   }
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-2">Build Console</h2>
-      <p className="text-sm text-gray-500 mb-6">Test individual MCP tools interactively</p>
+    <div className="animate-fade-in">
+      <div className="view-header">
+        <h2 className="view-title">Build Console</h2>
+      </div>
+      <p className="text-sm mb-6" style={{ color: "var(--color-text-tertiary)" }}>Test individual MCP tools interactively</p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
+      <div className="console-panels">
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">MCP Server</label>
+            <div className="console-panel-label">MCP Server</div>
             <select
               value={selectedServer}
               onChange={(e) => handleServerChange(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+              className="select"
+              style={{ width: "100%" }}
             >
               {MCP_SERVERS.map((s) => (
                 <option key={s.name} value={s.name}>{s.name}</option>
@@ -83,11 +94,12 @@ export function BuildConsole() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tool</label>
+            <div className="console-panel-label">Tool</div>
             <select
               value={selectedTool}
               onChange={(e) => handleToolChange(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+              className="select"
+              style={{ width: "100%" }}
             >
               {currentServer.tools.map((t) => (
                 <option key={t.name} value={t.name}>{t.name}</option>
@@ -96,35 +108,54 @@ export function BuildConsole() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Input JSON</label>
+            <div className="console-panel-label">Input JSON</div>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               rows={8}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm font-mono"
+              className="textarea"
             />
           </div>
 
           <button
             onClick={handleExecute}
             disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+            className="btn btn-primary"
           >
             {loading ? "Executing..." : "Execute Tool"}
           </button>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm" style={{ color: "var(--color-fail)" }}>{error}</p>}
         </div>
 
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Response</h3>
+          <div className="console-panel-label">Response</div>
           {data ? (
             <JsonViewer data={data} maxHeight="500px" />
           ) : (
-            <div className="bg-gray-100 rounded-lg p-8 text-center text-gray-400 text-sm">
+            <div className="code-block" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "200px" }}>
               Execute a tool to see the response
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="console-stats">
+        <span>Servers: <strong style={{ color: "var(--color-text-primary)" }}>4</strong></span>
+        <span>Tools: <strong style={{ color: "var(--color-text-primary)" }}>12</strong></span>
+        <span>Latency: <strong style={{ color: "var(--color-text-primary)" }}>--</strong></span>
+      </div>
+
+      {/* Tool Registry */}
+      <div style={{ marginTop: "var(--space-lg)", background: "var(--color-bg-card)", borderRadius: "var(--radius-lg)", padding: "var(--space-lg)" }}>
+        <div className="card-header">Tool Registry ({selectedServer})</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-xs)" }}>
+          {currentServer.tools.map((tool) => (
+            <div key={tool.name} style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", fontSize: "13px", color: "var(--color-text-secondary)" }}>
+              <span className="badge badge-pass" style={{ background: "rgba(0,178,148,0.15)", color: "var(--color-pass)", padding: "2px 6px", borderRadius: "var(--radius-sm)", fontSize: "11px", fontWeight: 600 }}>[PASS]</span>
+              {tool.name}
+            </div>
+          ))}
         </div>
       </div>
     </div>

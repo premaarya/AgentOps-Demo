@@ -1,1 +1,34 @@
-[]
+[
+  {
+    "id": "db6ff906-e857-4018-8200-d91d12f8e1ce",
+    "contract_id": "contract-8aa2ff1d",
+    "agent": "intake",
+    "action": "classified",
+    "reasoning": "Classified as NDA with 0.96 confidence",
+    "timestamp": "2026-03-05T19:36:56.930Z"
+  },
+  {
+    "id": "686dfae9-755c-4aa7-8e65-3d2b2377440f",
+    "contract_id": "contract-8aa2ff1d",
+    "agent": "extraction",
+    "action": "extracted",
+    "reasoning": "Extracted 4 clauses",
+    "timestamp": "2026-03-05T19:36:57.730Z"
+  },
+  {
+    "id": "b85fd493-1e47-4bbc-82bd-2a3e77fffc9c",
+    "contract_id": "contract-8aa2ff1d",
+    "agent": "compliance",
+    "action": "flagged",
+    "reasoning": "Risk: medium, Flags: 0",
+    "timestamp": "2026-03-05T19:36:58.260Z"
+  },
+  {
+    "id": "e68565bf-8a38-4c14-b536-9b87c30da9b8",
+    "contract_id": "contract-8aa2ff1d",
+    "agent": "approval",
+    "action": "approved",
+    "reasoning": "NDA with standard terms, no policy violations, both parties are established corporations. Low-risk confidentiality agreement with reasonable liability cap and standard termination provisions.",
+    "timestamp": "2026-03-05T19:36:59.006Z"
+  }
+]
