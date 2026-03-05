@@ -26,38 +26,27 @@ const AGENTS = [
 
 export function DesignCanvas() {
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-2">Agent Design Canvas</h2>
-      <p className="text-sm text-gray-500 mb-6">
-        4-agent pipeline: Intake -&gt; Extraction -&gt; Compliance -&gt; Approval
-      </p>
+    <div className="animate-fade-in">
+      <div className="view-header">
+        <h2 className="view-title">Agent Design Canvas</h2>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="agent-pipeline">
         {AGENTS.map((agent, i) => (
-          <div key={agent.name} className="relative">
+          <React.Fragment key={agent.name}>
             <AgentCard name={agent.name} role={agent.role} tools={agent.tools} />
             {i < AGENTS.length - 1 && (
-              <div className="hidden lg:block absolute top-1/2 -right-2 transform -translate-y-1/2 text-gray-400 text-lg">
-                -&gt;
-              </div>
+              <div className="pipeline-arrow">-&gt;</div>
             )}
-          </div>
+          </React.Fragment>
         ))}
       </div>
 
-      <div className="mt-8 bg-white rounded-lg border border-gray-200 p-4">
-        <h3 className="font-semibold text-sm mb-3">Pipeline Flow</h3>
-        <div className="flex items-center gap-2 text-sm flex-wrap">
-          <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded">Upload Contract</span>
-          <span className="text-gray-400">-&gt;</span>
-          <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded">Classify Type</span>
-          <span className="text-gray-400">-&gt;</span>
-          <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded">Extract Clauses</span>
-          <span className="text-gray-400">-&gt;</span>
-          <span className="px-3 py-1 bg-yellow-50 text-yellow-700 rounded">Check Compliance</span>
-          <span className="text-gray-400">-&gt;</span>
-          <span className="px-3 py-1 bg-green-50 text-green-700 rounded">Auto-Approve / Escalate</span>
-        </div>
+      <div className="agent-inventory">
+        <span><strong style={{ color: "var(--color-text-primary)" }}>4</strong> Agents</span>
+        <span><strong style={{ color: "var(--color-text-primary)" }}>12</strong> MCP Tools</span>
+        <span><strong style={{ color: "var(--color-text-primary)" }}>3</strong> MCP Servers</span>
+        <span>Model: <strong style={{ color: "var(--color-text-primary)", fontFamily: "var(--font-mono)" }}>gpt-4o</strong></span>
       </div>
     </div>
   );

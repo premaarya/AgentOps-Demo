@@ -61,69 +61,49 @@ export function EvaluationLab() {
   const judge = latest?.judge_scores;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "var(--space-lg)" }}>
+      <div className="view-header">
         <div>
-          <h2 className="text-xl font-bold">Evaluation Lab</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="view-title">Evaluation Lab</h2>
+          <p className="text-sm" style={{ color: "var(--color-text-tertiary)" }}>
             Ground-truth metrics + LLM-as-judge scoring + quality gates
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
           <input
             type="text"
             value={version}
             onChange={(e) => setVersion(e.target.value)}
-            className="px-3 py-2 border rounded text-sm w-20"
+            className="input"
+            style={{ width: "80px" }}
             placeholder="v1.3"
           />
-          <button
-            onClick={runSuite}
-            disabled={loading}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-          >
+          <button onClick={runSuite} disabled={loading} className="btn btn-danger">
             {loading ? "Running..." : "Run Suite ->"}
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="eval-layout">
         {/* Test Suite Config */}
-        <div className="bg-white rounded-lg border p-4">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3">Test Suite Config</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-500">Test Set</span>
-              <span>{latest?.total_cases ?? 20} contracts</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Coverage</span>
-              <span>95%</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Last Run</span>
-              <span>{latest ? new Date(latest.run_at).toLocaleTimeString() : "Never"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Baseline</span>
-              <span>{baseline?.baseline?.version ?? "v1.2"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Current</span>
-              <span>{latest?.version ?? "N/A"}</span>
-            </div>
-          </div>
+        <div className="eval-config">
+          <div className="card-header">Config</div>
+          <div className="eval-config-label">Test Set</div>
+          <div className="eval-config-value">{latest?.total_cases ?? 20} contracts</div>
+          <div className="eval-config-label">Coverage</div>
+          <div className="eval-config-value">95%</div>
+          <div className="eval-config-label">Last Run</div>
+          <div className="eval-config-value" style={{ fontSize: "12px" }}>{latest ? new Date(latest.run_at).toLocaleTimeString() : "Never"}</div>
+          <div className="eval-config-label">Baseline</div>
+          <div className="eval-config-value">{baseline?.baseline?.version ?? "v1.2"}</div>
+          <div className="eval-config-label">Current</div>
+          <div className="eval-config-value">{latest?.version ?? "N/A"}</div>
 
           {latest && (
-            <div
-              className={`mt-4 p-3 rounded-lg text-center font-bold text-sm ${
-                latest.quality_gate === "PASS"
-                  ? "bg-green-50 text-green-700 border border-green-300"
-                  : "bg-red-50 text-red-700 border border-red-300"
-              }`}
-            >
-              Quality Gate: [{latest.quality_gate}]
-              <div className="text-xs font-normal mt-1">
+            <div className={`quality-gate ${latest.quality_gate === "PASS" ? "pass" : "fail"}`} style={{ marginTop: "var(--space-lg)" }}>
+              <div className="quality-gate-label">Quality Gate</div>
+              <div className="quality-gate-status">[{latest.quality_gate}]</div>
+              <div style={{ fontSize: "11px", color: "var(--color-text-tertiary)", marginTop: "var(--space-xs)" }}>
                 {latest.quality_gate === "PASS" ? "Ready to deploy" : "Blocking deployment"}
               </div>
             </div>
@@ -131,30 +111,28 @@ export function EvaluationLab() {
         </div>
 
         {/* Results */}
-        <div className="col-span-2 space-y-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-lg)" }}>
           {latest && (
             <>
-              <div className="bg-white rounded-lg border p-4">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-sm font-semibold text-gray-500">Overall</h3>
-                  <span className="text-lg font-bold">
+              <div className="eval-overall">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-sm)" }}>
+                  <span>Overall</span>
+                  <span style={{ fontSize: "18px" }}>
                     {latest.passed}/{latest.total_cases} passed ({latest.accuracy}%)
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className={`h-3 rounded-full ${
-                      latest.accuracy >= 85 ? "bg-green-500" : latest.accuracy >= 70 ? "bg-yellow-500" : "bg-red-500"
-                    }`}
-                    style={{ width: `${latest.accuracy}%` }}
-                  />
+                <div className="progress-bar" style={{ height: "8px" }}>
+                  <div className="progress-fill" style={{
+                    width: `${latest.accuracy}%`,
+                    background: latest.accuracy >= 85 ? "var(--color-pass)" : latest.accuracy >= 70 ? "var(--color-warn)" : "var(--color-fail)",
+                  }} />
                 </div>
               </div>
 
               {/* Ground Truth Metrics */}
-              <div className="bg-white rounded-lg border p-4">
-                <h3 className="text-sm font-semibold text-gray-500 mb-3">Ground-Truth Metrics</h3>
-                <div className="grid grid-cols-5 gap-3">
+              <div className="card">
+                <div className="card-header">Ground-Truth Metrics</div>
+                <div className="metric-grid" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
                   <MetricCard
                     label="Extraction"
                     value={`${metrics.extraction_accuracy ?? 0}%`}
@@ -190,21 +168,19 @@ export function EvaluationLab() {
 
               {/* LLM-as-Judge Scores */}
               {judge && (
-                <div className="bg-white rounded-lg border p-4">
-                  <h3 className="text-sm font-semibold text-gray-500 mb-3">
-                    LLM-as-Judge Scores (GPT-4o)
-                  </h3>
-                  <div className="grid grid-cols-3 gap-4">
+                <div className="card">
+                  <div className="card-header">LLM-as-Judge Scores (GPT-4o)</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-lg)" }}>
                     {(["relevance", "groundedness", "coherence"] as const).map((dim) => (
-                      <div key={dim} className="text-center">
-                        <div className="text-2xl font-bold">
+                      <div key={dim} style={{ textAlign: "center" }}>
+                        <div style={{ fontSize: "28px", fontWeight: 700, color: "var(--color-text-primary)" }}>
                           {judge[dim]}/5
                         </div>
-                        <div className="text-xs text-gray-500 capitalize mt-1">{dim}</div>
-                        <div className="mt-2">
+                        <div style={{ fontSize: "12px", color: "var(--color-text-tertiary)", textTransform: "capitalize", marginTop: "var(--space-xs)" }}>{dim}</div>
+                        <div style={{ marginTop: "var(--space-sm)" }}>
                           <StatusBadge status={judge[dim] >= 4.0 ? "pass" : judge[dim] >= 3.0 ? "warn" : "fail"} />
                         </div>
-                        <div className="text-xs text-gray-400 mt-1">Threshold: &gt;=4.0</div>
+                        <div style={{ fontSize: "11px", color: "var(--color-text-disabled)", marginTop: "var(--space-xs)" }}>Threshold: &gt;=4.0</div>
                       </div>
                     ))}
                   </div>
@@ -215,51 +191,51 @@ export function EvaluationLab() {
 
           {/* Baseline Comparison */}
           {baseline?.delta && latest && (
-            <div className="bg-white rounded-lg border p-4">
-              <h3 className="text-sm font-semibold text-gray-500 mb-3">
+            <div className="card">
+              <div className="card-header">
                 Baseline Comparison ({baseline.baseline.version} vs {latest.version})
-              </h3>
-              <table className="w-full text-sm">
+              </div>
+              <table className="data-table">
                 <thead>
-                  <tr className="text-left text-gray-500 border-b">
-                    <th className="pb-2">Metric</th>
-                    <th className="pb-2">{baseline.baseline.version}</th>
-                    <th className="pb-2">{latest.version}</th>
-                    <th className="pb-2">Delta</th>
+                  <tr>
+                    <th>Metric</th>
+                    <th>{baseline.baseline.version}</th>
+                    <th>{latest.version}</th>
+                    <th>Delta</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b">
-                    <td className="py-1.5">Accuracy</td>
+                  <tr>
+                    <td>Accuracy</td>
                     <td>{baseline.baseline.accuracy}%</td>
                     <td>{latest.accuracy}%</td>
-                    <td className={baseline.delta.accuracy >= 0 ? "text-green-600" : "text-red-600"}>
+                    <td style={{ color: baseline.delta.accuracy >= 0 ? "var(--color-pass)" : "var(--color-fail)" }}>
                       {baseline.delta.accuracy >= 0 ? "+" : ""}{baseline.delta.accuracy}%
                     </td>
                   </tr>
                   {baseline.baseline.judge_scores && (
                     <>
-                      <tr className="border-b">
-                        <td className="py-1.5">Relevance</td>
+                      <tr>
+                        <td>Relevance</td>
                         <td>{baseline.baseline.judge_scores.relevance}/5</td>
                         <td>{judge?.relevance ?? 0}/5</td>
-                        <td className={baseline.delta.relevance >= 0 ? "text-green-600" : "text-red-600"}>
+                        <td style={{ color: baseline.delta.relevance >= 0 ? "var(--color-pass)" : "var(--color-fail)" }}>
                           {baseline.delta.relevance >= 0 ? "+" : ""}{baseline.delta.relevance}
                         </td>
                       </tr>
-                      <tr className="border-b">
-                        <td className="py-1.5">Groundedness</td>
+                      <tr>
+                        <td>Groundedness</td>
                         <td>{baseline.baseline.judge_scores.groundedness}/5</td>
                         <td>{judge?.groundedness ?? 0}/5</td>
-                        <td className={baseline.delta.groundedness >= 0 ? "text-green-600" : "text-red-600"}>
+                        <td style={{ color: baseline.delta.groundedness >= 0 ? "var(--color-pass)" : "var(--color-fail)" }}>
                           {baseline.delta.groundedness >= 0 ? "+" : ""}{baseline.delta.groundedness}
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1.5">Coherence</td>
+                        <td>Coherence</td>
                         <td>{baseline.baseline.judge_scores.coherence}/5</td>
                         <td>{judge?.coherence ?? 0}/5</td>
-                        <td className={baseline.delta.coherence >= 0 ? "text-green-600" : "text-red-600"}>
+                        <td style={{ color: baseline.delta.coherence >= 0 ? "var(--color-pass)" : "var(--color-fail)" }}>
                           {baseline.delta.coherence >= 0 ? "+" : ""}{baseline.delta.coherence}
                         </td>
                       </tr>

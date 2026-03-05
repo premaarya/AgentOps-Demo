@@ -1,5 +1,5 @@
 export type ContractType = "NDA" | "MSA" | "SOW" | "Amendment" | "SLA";
-export type ContractStatus = "processing" | "awaiting_review" | "approved" | "rejected" | "archived";
+export type ContractStatus = "processing" | "awaiting_review" | "approved" | "rejected" | "archived" | "failed";
 export interface Contract {
     readonly id: string;
     readonly filename: string;
@@ -9,6 +9,7 @@ export interface Contract {
     classification_confidence?: number;
     submitted_at: string;
     completed_at?: string;
+    error_message?: string;
 }
 export interface ExtractedClause {
     readonly type: string;
@@ -50,13 +51,14 @@ export interface ReviewEntry {
     readonly decided_at: string;
 }
 export type AuditAgent = "intake" | "extraction" | "compliance" | "approval" | "human";
-export type AuditAction = "classified" | "extracted" | "flagged" | "escalated" | "approved" | "rejected" | "request_changes";
+export type AuditAction = "classified" | "extracted" | "flagged" | "escalated" | "approved" | "rejected" | "request_changes" | "error";
 export interface AuditEntry {
     readonly id: string;
     readonly contract_id: string;
     readonly agent: AuditAgent;
     readonly action: AuditAction;
     readonly reasoning: string;
+    readonly description?: string;
     readonly timestamp: string;
 }
 export interface TraceEntry {
@@ -128,7 +130,7 @@ export interface PolicyRule {
     readonly check: string;
     readonly severity: RiskLevel;
 }
-export type PipelineStage = "processing_started" | "intake_complete" | "extraction_complete" | "compliance_complete" | "awaiting_human_review" | "approved" | "rejected" | "pipeline_complete" | "pipeline_error";
+export type PipelineStage = "processing_started" | "intake_complete" | "extraction_complete" | "compliance_complete" | "awaiting_human_review" | "approved" | "rejected" | "pipeline_complete" | "pipeline_error" | "pipeline_failed";
 export interface WebSocketEvent {
     readonly event: "agent_step_complete" | "pipeline_status" | "error";
     readonly contract_id: string;

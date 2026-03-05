@@ -39,9 +39,9 @@ function ViewRouter() {
 export default function App() {
   return (
     <AppProvider>
-      <div className="min-h-screen flex flex-col">
+      <div className="app-shell">
         <NavBar />
-        <main className="flex-1 bg-gray-50">
+        <main className="main-content">
           <ViewRouter />
         </main>
         <StatusBar />

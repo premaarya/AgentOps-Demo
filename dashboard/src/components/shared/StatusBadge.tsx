@@ -5,28 +5,30 @@ interface Props {
   size?: "sm" | "md";
 }
 
-const COLORS: Record<string, string> = {
-  processing: "bg-blue-100 text-blue-700",
-  awaiting_review: "bg-yellow-100 text-yellow-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
-  archived: "bg-gray-100 text-gray-600",
-  low: "bg-green-100 text-green-700",
-  medium: "bg-yellow-100 text-yellow-700",
-  high: "bg-red-100 text-red-700",
-  pass: "bg-green-100 text-green-700",
-  fail: "bg-red-100 text-red-700",
-  warn: "bg-yellow-100 text-yellow-700",
-  online: "bg-green-100 text-green-700",
-  offline: "bg-red-100 text-red-700",
+const BADGE_MAP: Record<string, string> = {
+  processing: "badge-info",
+  awaiting_review: "badge-warn",
+  approved: "badge-pass",
+  rejected: "badge-fail",
+  archived: "badge-info",
+  low: "badge-pass",
+  medium: "badge-warn",
+  high: "badge-fail",
+  pass: "badge-pass",
+  fail: "badge-fail",
+  warn: "badge-warn",
+  info: "badge-info",
+  online: "badge-pass",
+  offline: "badge-fail",
+  idle: "badge-info",
 };
 
 export function StatusBadge({ status, size = "sm" }: Props) {
-  const color = COLORS[status] ?? "bg-gray-100 text-gray-600";
-  const padding = size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm";
+  const badgeClass = BADGE_MAP[status] ?? "badge-info";
+  const sizeStyle = size === "sm" ? { fontSize: "11px", padding: "2px 8px" } : { fontSize: "13px", padding: "4px 12px" };
 
   return (
-    <span className={`inline-block rounded-full font-medium ${color} ${padding}`}>
+    <span className={`badge ${badgeClass}`} style={sizeStyle}>
       {status.replace(/_/g, " ")}
     </span>
   );

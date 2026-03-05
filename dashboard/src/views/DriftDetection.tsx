@@ -76,30 +76,30 @@ export function DriftDetection() {
   const knownTypes = ["NDA", "MSA", "SOW", "Amendment", "SLA"];
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "var(--space-lg)" }}>
+      <div className="view-header">
         <div>
-          <h2 className="text-xl font-bold">Drift Detection Center</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="view-title">Drift Detection Center</h2>
+          <p className="text-sm" style={{ color: "var(--color-text-tertiary)" }}>
             Monitor LLM drift, data drift, and model swap impact
           </p>
         </div>
-        <span className="text-sm text-gray-400">Time Range: Last 30 days</span>
+        <span style={{ fontSize: "12px", color: "var(--color-text-disabled)" }}>Time Range: Last 30 days</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="drift-charts">
         {/* LLM Drift */}
-        <div className="bg-white rounded-lg border p-4">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3">
+        <div className="chart-card">
+          <div className="chart-title">
             LLM Drift - Extraction Accuracy Over Time
-          </h3>
+          </div>
           {chartTimeline.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={chartTimeline}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="week" tick={{ fontSize: 11 }} />
-                <YAxis domain={[75, 95]} tick={{ fontSize: 11 }} />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" stroke="#3A3A3A" />
+                <XAxis dataKey="week" tick={{ fontSize: 11, fill: "#A0A0A0" }} stroke="#3A3A3A" />
+                <YAxis domain={[75, 95]} tick={{ fontSize: 11, fill: "#A0A0A0" }} stroke="#3A3A3A" />
+                <Tooltip contentStyle={{ background: "#2D2D2D", border: "1px solid #3A3A3A", borderRadius: "8px", color: "#F2F2F2" }} />
                 <ReferenceLine
                   y={85}
                   stroke="#E74C3C"
@@ -109,20 +109,20 @@ export function DriftDetection() {
                 <Line
                   type="monotone"
                   dataKey="accuracy"
-                  stroke="#0078D4"
+                  stroke="#50E6FF"
                   strokeWidth={2}
-                  dot={{ r: 4 }}
+                  dot={{ r: 4, fill: "#50E6FF" }}
                   name="Accuracy %"
                 />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
+            <div style={{ height: "200px", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-text-disabled)" }}>
               Loading drift data...
             </div>
           )}
           {llmDrift?.alerts.map((a, i) => (
-            <div key={i} className="flex items-center gap-2 mt-2 text-xs">
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginTop: "var(--space-sm)", fontSize: "12px" }}>
               <StatusBadge
                 status={a.severity === "critical" ? "fail" : a.severity === "warning" ? "warn" : "info"}
               />
@@ -132,17 +132,17 @@ export function DriftDetection() {
         </div>
 
         {/* Data Drift */}
-        <div className="bg-white rounded-lg border p-4">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3">
+        <div className="chart-card">
+          <div className="chart-title">
             Data Drift - Contract Type Distribution
-          </h3>
+          </div>
           {distData.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={distData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" domain={[0, 50]} tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={90} />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" stroke="#3A3A3A" />
+                <XAxis type="number" domain={[0, 50]} tick={{ fontSize: 11, fill: "#A0A0A0" }} stroke="#3A3A3A" />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: "#A0A0A0" }} width={90} stroke="#3A3A3A" />
+                <Tooltip contentStyle={{ background: "#2D2D2D", border: "1px solid #3A3A3A", borderRadius: "8px", color: "#F2F2F2" }} />
                 <Bar dataKey="percentage" name="% of contracts">
                   {distData.map((entry, index) => (
                     <Cell
@@ -158,12 +158,12 @@ export function DriftDetection() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
+            <div style={{ height: "200px", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-text-disabled)" }}>
               Loading distribution...
             </div>
           )}
           {dataDrift?.alerts.map((a, i) => (
-            <div key={i} className="flex items-center gap-2 mt-2 text-xs">
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginTop: "var(--space-sm)", fontSize: "12px" }}>
               <StatusBadge
                 status={a.severity === "critical" ? "fail" : a.severity === "warning" ? "warn" : "info"}
               />
@@ -174,53 +174,54 @@ export function DriftDetection() {
       </div>
 
       {/* Model Swap */}
-      <div className="bg-white rounded-lg border p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-500">Model Swap Analysis</h3>
-          <button
-            onClick={runModelSwap}
-            disabled={loading}
-            className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 text-sm"
-          >
+      <div className="card">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-lg)" }}>
+          <div className="card-header" style={{ marginBottom: 0 }}>Model Swap Analysis</div>
+          <button onClick={runModelSwap} disabled={loading} className="btn btn-warning">
             {loading ? "Simulating..." : "Simulate Swap ->"}
           </button>
         </div>
         {modelSwap && (
-          <div className="grid grid-cols-3 gap-4">
-            <div className="border rounded-lg p-4">
-              <h4 className="text-sm font-semibold mb-2">Current: GPT-4o</h4>
-              <div className="space-y-1 text-sm">
-                <div>Accuracy: {(modelSwap.gpt4o.accuracy * 100).toFixed(1)}%</div>
-                <div>Latency: {modelSwap.gpt4o.latency_ms}ms</div>
-                <div>Cost/1K: ${(modelSwap.gpt4o.cost_per_contract * 1000).toFixed(2)}</div>
+          <div className="model-swap">
+            <div className="model-card">
+              <div className="model-card-title">Current: GPT-4o</div>
+              <div className="model-stat">
+                <span className="model-stat-label">Accuracy</span>
+                <span className="model-stat-value">{(modelSwap.gpt4o.accuracy * 100).toFixed(1)}%</span>
+              </div>
+              <div className="model-stat">
+                <span className="model-stat-label">Latency</span>
+                <span className="model-stat-value">{modelSwap.gpt4o.latency_ms}ms</span>
+              </div>
+              <div className="model-stat">
+                <span className="model-stat-label">Cost/1K</span>
+                <span className="model-stat-value">${(modelSwap.gpt4o.cost_per_contract * 1000).toFixed(2)}</span>
               </div>
             </div>
-            <div className="border rounded-lg p-4">
-              <h4 className="text-sm font-semibold mb-2">Candidate: GPT-4o-mini</h4>
-              <div className="space-y-1 text-sm">
-                <div>Accuracy: {(modelSwap.gpt4o_mini.accuracy * 100).toFixed(1)}%</div>
-                <div>Latency: {modelSwap.gpt4o_mini.latency_ms}ms</div>
-                <div>Cost/1K: ${(modelSwap.gpt4o_mini.cost_per_contract * 1000).toFixed(2)}</div>
+            <div className="model-card">
+              <div className="model-card-title">Candidate: GPT-4o-mini</div>
+              <div className="model-stat">
+                <span className="model-stat-label">Accuracy</span>
+                <span className="model-stat-value">{(modelSwap.gpt4o_mini.accuracy * 100).toFixed(1)}%</span>
+              </div>
+              <div className="model-stat">
+                <span className="model-stat-label">Latency</span>
+                <span className="model-stat-value">{modelSwap.gpt4o_mini.latency_ms}ms</span>
+              </div>
+              <div className="model-stat">
+                <span className="model-stat-label">Cost/1K</span>
+                <span className="model-stat-value">${(modelSwap.gpt4o_mini.cost_per_contract * 1000).toFixed(2)}</span>
               </div>
             </div>
             <div
-              className={`border-2 rounded-lg p-4 ${
-                Math.abs(modelSwap.comparison.accuracy_delta) <= 0.05
-                  ? "border-green-500 bg-green-50"
-                  : "border-red-500 bg-red-50"
-              }`}
+              className={`quality-gate ${Math.abs(modelSwap.comparison.accuracy_delta) <= 0.05 ? "pass" : "fail"}`}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
             >
-              <h4 className="text-sm font-semibold mb-2">VERDICT</h4>
-              <div
-                className={`text-lg font-bold ${
-                  Math.abs(modelSwap.comparison.accuracy_delta) <= 0.05
-                    ? "text-green-700"
-                    : "text-red-700"
-                }`}
-              >
+              <div className="quality-gate-label">VERDICT</div>
+              <div className="quality-gate-status">
                 {Math.abs(modelSwap.comparison.accuracy_delta) <= 0.05 ? "ACCEPTABLE" : "DEGRADED"}
               </div>
-              <div className="space-y-1 text-xs mt-2">
+              <div style={{ fontSize: "12px", color: "var(--color-text-tertiary)", marginTop: "var(--space-sm)" }}>
                 <div>Accuracy: {(modelSwap.comparison.accuracy_delta * 100).toFixed(1)}%</div>
                 <div>Cost: {(modelSwap.comparison.cost_delta * 100).toFixed(0)}%</div>
                 <div>Latency: {(modelSwap.comparison.latency_delta * 100).toFixed(0)}%</div>
@@ -231,29 +232,27 @@ export function DriftDetection() {
       </div>
 
       {/* Recommended Actions */}
-      <div className="bg-white rounded-lg border p-4">
-        <h3 className="text-sm font-semibold text-gray-500 mb-3">Recommended Actions</h3>
-        <div className="space-y-2 text-sm">
-          {llmDrift?.alerts.some((a) => a.severity === "critical" || a.severity === "warning") && (
-            <div className="flex items-start gap-2">
-              <span className="text-red-500 font-bold">[!]</span>
-              <span>Update compliance rules for AI liability clause (data drift)</span>
-            </div>
-          )}
-          {dataDrift?.alerts.some((a) => a.severity === "warning") && (
-            <div className="flex items-start gap-2">
-              <span className="text-red-500 font-bold">[!]</span>
-              <span>Retrain extraction prompts on new contract types</span>
-            </div>
-          )}
-          <div className="flex items-start gap-2">
-            <span className="text-blue-500 font-bold">[i]</span>
-            <span>Consider GPT-4o-mini swap for non-critical extractions</span>
+      <div className="recommended-actions">
+        <div className="card-header">Recommended Actions</div>
+        {llmDrift?.alerts.some((a) => a.severity === "critical" || a.severity === "warning") && (
+          <div className="action-item">
+            <span className="action-icon warning">[!]</span>
+            <span>Update compliance rules for AI liability clause (data drift)</span>
           </div>
-          <div className="flex items-start gap-2">
-            <span className="text-blue-500 font-bold">[i]</span>
-            <span>Schedule weekly drift monitoring alerts</span>
+        )}
+        {dataDrift?.alerts.some((a) => a.severity === "warning") && (
+          <div className="action-item">
+            <span className="action-icon warning">[!]</span>
+            <span>Retrain extraction prompts on new contract types</span>
           </div>
+        )}
+        <div className="action-item">
+          <span className="action-icon info">[i]</span>
+          <span>Consider GPT-4o-mini swap for non-critical extractions</span>
+        </div>
+        <div className="action-item">
+          <span className="action-icon info">[i]</span>
+          <span>Schedule weekly drift monitoring alerts</span>
         </div>
       </div>
     </div>

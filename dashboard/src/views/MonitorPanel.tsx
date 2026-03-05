@@ -43,40 +43,46 @@ export function MonitorPanel() {
   const processing = contracts.filter((c) => c.status === "processing").length;
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-2">Monitor Panel</h2>
-      <p className="text-sm text-gray-500 mb-6">Track contracts, audit trails, and agent activity</p>
+    <div className="animate-fade-in">
+      <div className="view-header">
+        <h2 className="view-title">Monitor Panel</h2>
+      </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="metric-grid" style={{ marginBottom: "var(--space-lg)" }}>
         <MetricCard label="Total Contracts" value={contracts.length} />
         <MetricCard label="Approved" value={approved} subtitle={`${contracts.length > 0 ? Math.round((approved / contracts.length) * 100) : 0}%`} trend="up" />
         <MetricCard label="Awaiting Review" value={awaiting} trend={awaiting > 0 ? "down" : "neutral"} />
         <MetricCard label="Processing" value={processing} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="monitor-layout">
         {/* Contract List */}
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Contracts</h3>
-          <div className="space-y-2 max-h-96 overflow-auto">
+          <div className="card-header">Contracts</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-sm)", maxHeight: "400px", overflowY: "auto" }}>
             {contracts.length === 0 ? (
-              <p className="text-sm text-gray-400">No contracts processed yet</p>
+              <p className="text-sm" style={{ color: "var(--color-text-disabled)" }}>No contracts processed yet</p>
             ) : (
               contracts.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedContract(c.id)}
-                  className={`w-full text-left bg-white rounded border p-3 hover:border-blue-300 transition-colors ${
-                    selectedContract === c.id ? "border-blue-500 ring-1 ring-blue-200" : ""
-                  }`}
+                  className="card"
+                  style={{
+                    textAlign: "left",
+                    cursor: "pointer",
+                    width: "100%",
+                    border: selectedContract === c.id ? "2px solid var(--color-accent)" : "2px solid transparent",
+                    transition: "all 0.2s ease",
+                  }}
                 >
-                  <div className="flex justify-between items-center">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <p className="text-sm font-medium">{c.filename}</p>
-                      <p className="text-xs text-gray-400">{c.id}</p>
+                      <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--color-text-primary)" }}>{c.filename}</p>
+                      <p style={{ fontSize: "11px", color: "var(--color-text-disabled)", fontFamily: "var(--font-mono)" }}>{c.id}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {c.type && <span className="text-xs text-gray-500">{c.type}</span>}
+                    <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
+                      {c.type && <span style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>{c.type}</span>}
                       <StatusBadge status={c.status} />
                     </div>
                   </div>
@@ -88,28 +94,30 @@ export function MonitorPanel() {
 
         {/* Audit Trail */}
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">
-            Audit Trail {selectedContract && `- ${selectedContract}`}
-          </h3>
+          <div className="card-header">
+            Audit Trail {selectedContract && <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--color-text-tertiary)" }}>- {selectedContract}</span>}
+          </div>
           {selectedContract ? (
             auditEntries.length > 0 ? (
-              <div className="space-y-2 max-h-96 overflow-auto">
+              <div className="trace-tree">
                 {auditEntries.map((entry) => (
-                  <div key={entry.id} className="bg-white rounded border p-3 text-xs">
-                    <div className="flex justify-between mb-1">
-                      <span className="font-medium capitalize">{entry.agent}</span>
+                  <div key={entry.id} className="trace-agent">
+                    <div className="trace-agent-header">
+                      <span className="trace-agent-name" style={{ textTransform: "capitalize" }}>{entry.agent}</span>
                       <StatusBadge status={entry.action === "approved" ? "approved" : entry.action === "escalated" ? "awaiting_review" : "processing"} />
+                      <span className="trace-agent-time">{new Date(entry.timestamp).toLocaleTimeString()}</span>
                     </div>
-                    <p className="text-gray-600">{entry.reasoning}</p>
-                    <p className="text-gray-400 mt-1">{new Date(entry.timestamp).toLocaleTimeString()}</p>
+                    <div className="trace-tools">
+                      <div className="trace-tool">{entry.reasoning}</div>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-400">No audit entries for this contract</p>
+              <p className="text-sm" style={{ color: "var(--color-text-disabled)" }}>No audit entries for this contract</p>
             )
           ) : (
-            <div className="bg-gray-100 rounded-lg p-8 text-center text-gray-400 text-sm">
+            <div className="code-block" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "150px" }}>
               Select a contract to view its audit trail
             </div>
           )}

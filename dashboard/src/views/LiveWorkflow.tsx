@@ -46,24 +46,28 @@ export function LiveWorkflow() {
   }
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-2">Live Workflow</h2>
-      <p className="text-sm text-gray-500 mb-1">
-        Submit a contract and watch the 4-agent pipeline process it in real-time
-      </p>
-      <p className="text-xs mb-6">
-        WebSocket: <StatusBadge status={connected ? "online" : "offline"} />
-      </p>
+    <div className="animate-fade-in">
+      <div className="view-header">
+        <div>
+          <h2 className="view-title">Live Workflow</h2>
+          <p className="text-sm" style={{ color: "var(--color-text-tertiary)" }}>
+            Submit a contract and watch the 4-agent pipeline process it in real-time
+          </p>
+        </div>
+        <StatusBadge status={connected ? "online" : "offline"} />
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1fr", gap: "var(--space-lg)" }}>
         {/* Left: Submit */}
-        <div className="space-y-4">
+        <div className="card" style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}>
+          <div className="card-header">Submit Contract</div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sample Contract</label>
+            <div className="console-panel-label">Sample Contract</div>
             <select
               value={selectedContract}
               onChange={(e) => setSelectedContract(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+              className="select"
+              style={{ width: "100%" }}
             >
               {SAMPLE_CONTRACTS.map((c) => (
                 <option key={c.name} value={c.name}>{c.label}</option>
@@ -73,28 +77,31 @@ export function LiveWorkflow() {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+            className="btn btn-primary"
+            style={{ width: "100%" }}
           >
             {loading ? "Submitting..." : "Submit Contract"}
           </button>
         </div>
 
         {/* Center: Pipeline Progress */}
-        <div className="space-y-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}>
           <ProgressBar value={progressPercent} label="Pipeline Progress" />
-          <div className="space-y-2">
-            {STAGES.map((stage) => {
+          <div className="workflow-canvas">
+            {STAGES.map((stage, i) => {
               const msg = messages.find((m) => m.agent === stage && m.event === "agent_step_complete");
+              const isCompleted = !!msg;
               return (
-                <div key={stage} className="flex items-center justify-between bg-white rounded border p-3">
-                  <span className="text-sm font-medium capitalize">{stage}</span>
-                  <div className="flex items-center gap-2">
-                    {msg?.latency_ms && (
-                      <span className="text-xs text-gray-400">{msg.latency_ms}ms</span>
-                    )}
-                    <StatusBadge status={msg ? "pass" : completedStages.length > 0 ? "idle" : "idle"} />
+                <React.Fragment key={stage}>
+                  <div className={`workflow-node${isCompleted ? " completed" : ""}`}>
+                    <div className="workflow-node-name" style={{ textTransform: "capitalize" }}>{stage}</div>
+                    <div className="workflow-node-status">
+                      {msg?.latency_ms && <span style={{ fontFamily: "var(--font-mono)" }}>{msg.latency_ms}ms</span>}
+                    </div>
+                    <StatusBadge status={msg ? "pass" : "idle"} />
                   </div>
-                </div>
+                  {i < STAGES.length - 1 && <div className="workflow-arrow">-&gt;</div>}
+                </React.Fragment>
               );
             })}
           </div>
@@ -102,21 +109,21 @@ export function LiveWorkflow() {
 
         {/* Right: Events Log */}
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Event Log</h3>
+          <div className="card-header">Event Log</div>
           {messages.length > 0 ? (
-            <div className="space-y-2 max-h-96 overflow-auto">
+            <div className="activity-log">
               {messages.map((msg, i) => (
-                <div key={i} className="bg-white rounded border p-2 text-xs">
-                  <div className="flex justify-between">
-                    <span className="font-medium">{msg.event}</span>
-                    <span className="text-gray-400">{msg.agent ?? msg.status}</span>
+                <div key={i} className="activity-log-entry">
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>{msg.event}</span>
+                    <span style={{ color: "var(--color-text-disabled)" }}>{msg.agent ?? msg.status}</span>
                   </div>
                   {msg.result != null && <JsonViewer data={msg.result} maxHeight="100px" />}
                 </div>
               ))}
             </div>
           ) : (
-            <div className="bg-gray-100 rounded-lg p-8 text-center text-gray-400 text-sm">
+            <div className="code-block" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "150px" }}>
               Submit a contract to see real-time updates
             </div>
           )}

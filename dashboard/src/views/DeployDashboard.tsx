@@ -118,92 +118,82 @@ export function DeployDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "var(--space-lg)" }}>
+      <div className="view-header">
         <div>
-          <h2 className="text-xl font-bold">Deploy to Azure AI Foundry</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="view-title">Deploy to Azure AI Foundry</h2>
+          <p className="text-sm" style={{ color: "var(--color-text-tertiary)" }}>
             {modeInfo?.mode === "live"
               ? "Live deployment to Azure AI Foundry"
               : "Simulated deployment pipeline (set DEMO_MODE=live for real deployment)"}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Mode badge */}
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              modeInfo?.mode === "live"
-                ? "bg-green-100 text-green-800"
-                : "bg-amber-100 text-amber-800"
-            }`}
-          >
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
+          <span className={`badge ${modeInfo?.mode === "live" ? "badge-pass" : "badge-warn"}`}>
             {modeInfo?.mode === "live" ? "LIVE" : "SIMULATED"}
           </span>
           {result && result.agents.some((a) => a.status === "registered") && (
-            <button
-              onClick={handleCleanup}
-              disabled={cleanupApi.loading}
-              className="px-3 py-2 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50"
-            >
+            <button onClick={handleCleanup} disabled={cleanupApi.loading} className="btn btn-danger">
               {cleanupApi.loading ? "Cleaning..." : "Cleanup Agents"}
             </button>
           )}
-          <button
-            onClick={runDeploy}
-            disabled={loading}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-          >
+          <button onClick={runDeploy} disabled={loading} className="btn btn-primary">
             {loading ? "Deploying..." : "Deploy Pipeline ->"}
           </button>
         </div>
       </div>
 
       {/* Pipeline stages - 6-stage real pipeline */}
-      <div className="bg-white rounded-lg border p-6">
-        <h3 className="text-sm font-semibold text-gray-500 mb-4">Deployment Pipeline</h3>
-        <div className="grid grid-cols-6 gap-2">
+      <div className="card">
+        <div className="card-header">Deployment Pipeline</div>
+        <div className="deploy-pipeline">
           {stageNames.map((name, i) => {
             const stage = result?.stages[i];
             const isActive = animStage === i;
             const isDone = animStage > i;
 
+            let stageClass = "deploy-stage";
+            if (isDone && stage) {
+              stageClass += stage.status === "passed" ? " passed" : stage.status === "failed" ? " failed" : "";
+            } else if (isActive) {
+              stageClass += " active";
+            }
+
             return (
-              <div
-                key={name}
-                className={`rounded-lg p-3 text-center border-2 transition-all duration-500 ${
-                  isDone && stage
-                    ? stageStatusColor(stage.status)
-                    : isActive
-                    ? "border-blue-500 bg-blue-50 animate-pulse"
-                    : "border-gray-200 bg-gray-50"
-                }`}
-              >
-                <div className="font-semibold text-xs">{name}</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {isDone && stage
-                    ? stageLabel(stage.status)
-                    : isActive
-                    ? "Running..."
-                    : "Pending"}
-                </div>
-                {isDone && stage && (
-                  <div className="text-xs text-gray-400 mt-1">
-                    {stage.duration_ms < 1000
-                      ? `${stage.duration_ms}ms`
-                      : `${(stage.duration_ms / 1000).toFixed(1)}s`}
+              <React.Fragment key={name}>
+                <div className={stageClass}>
+                  <div className="deploy-stage-name">{name}</div>
+                  <div className="deploy-stage-status">
+                    {isDone && stage ? (
+                      <span className={`badge ${stage.status === "passed" ? "badge-pass" : stage.status === "failed" ? "badge-fail" : "badge-warn"}`}>
+                        {stageLabel(stage.status)}
+                      </span>
+                    ) : isActive ? (
+                      <span className="badge badge-info animate-pulse-custom">Running...</span>
+                    ) : (
+                      <span className="badge badge-info">Pending</span>
+                    )}
                   </div>
-                )}
-              </div>
+                  {isDone && stage && (
+                    <div className="deploy-stage-time">
+                      {stage.duration_ms < 1000
+                        ? `${stage.duration_ms}ms`
+                        : `${(stage.duration_ms / 1000).toFixed(1)}s`}
+                    </div>
+                  )}
+                </div>
+                {i < stageNames.length - 1 && <span className="deploy-arrow">-&gt;</span>}
+              </React.Fragment>
             );
           })}
         </div>
         {/* Show stage errors */}
         {result?.stages.some((s) => s.error) && (
-          <div className="mt-3 space-y-1">
+          <div style={{ marginTop: "var(--space-md)", display: "flex", flexDirection: "column", gap: "var(--space-xs)" }}>
             {result.stages
               .filter((s) => s.error)
               .map((s) => (
-                <div key={s.name} className="text-xs text-red-600 bg-red-50 rounded px-3 py-1">
+                <div key={s.name} className="badge-fail" style={{ padding: "var(--space-sm) var(--space-md)", borderRadius: "var(--radius-sm)", fontSize: "12px" }}>
                   {s.name}: {s.error}
                 </div>
               ))}
@@ -214,33 +204,33 @@ export function DeployDashboard() {
       {result && (
         <>
           {/* Agent Registration */}
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="text-sm font-semibold text-gray-500 mb-4">
+          <div className="card">
+            <div className="card-header">
               Foundry Agent Registration
               {result.mode === "live" && (
-                <span className="ml-2 text-xs text-green-600 font-normal">(Azure AI Foundry)</span>
+                <span className="badge badge-pass" style={{ marginLeft: "var(--space-sm)" }}>Azure AI Foundry</span>
               )}
-            </h3>
-            <table className="w-full text-sm">
+            </div>
+            <table className="data-table">
               <thead>
-                <tr className="text-left text-gray-500 border-b">
-                  <th className="pb-2">Agent</th>
-                  <th className="pb-2">Foundry ID</th>
-                  <th className="pb-2">Model</th>
-                  <th className="pb-2">Tools</th>
-                  <th className="pb-2">Status</th>
+                <tr>
+                  <th>Agent</th>
+                  <th>Foundry ID</th>
+                  <th>Model</th>
+                  <th>Tools</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {result.agents.map((agent) => (
-                  <tr key={agent.agent_name} className="border-b">
-                    <td className="py-2 font-medium">{agent.agent_name}</td>
-                    <td className="py-2 font-mono text-xs">
+                  <tr key={agent.agent_name}>
+                    <td style={{ fontWeight: 600 }}>{agent.agent_name}</td>
+                    <td style={{ fontFamily: "var(--font-mono)", fontSize: "12px" }}>
                       {agent.foundry_agent_id || "-"}
                     </td>
-                    <td className="py-2 text-xs">{agent.model}</td>
-                    <td className="py-2 text-xs">{agent.tools_count}</td>
-                    <td className="py-2">
+                    <td style={{ fontSize: "12px" }}>{agent.model}</td>
+                    <td style={{ fontSize: "12px" }}>{agent.tools_count}</td>
+                    <td>
                       <StatusBadge
                         status={agent.status === "registered" ? "pass" : "fail"}
                       />
@@ -252,20 +242,20 @@ export function DeployDashboard() {
           </div>
 
           {/* Security + Evaluation */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg border p-4">
-              <h4 className="text-sm font-semibold text-gray-500 mb-3">Identity & Access</h4>
+          <div className="security-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+            <div className="security-card">
+              <div className="security-card-title">Identity & Access</div>
               {result.security.identity_access.map((c) => (
-                <div key={c.check} className="flex items-center gap-2 mb-2 text-sm">
+                <div key={c.check} className="security-item">
                   <StatusBadge status={c.status === "passed" ? "pass" : "fail"} />
                   <span>{c.check}</span>
                 </div>
               ))}
             </div>
-            <div className="bg-white rounded-lg border p-4">
-              <h4 className="text-sm font-semibold text-gray-500 mb-3">Content Safety</h4>
+            <div className="security-card">
+              <div className="security-card-title">Content Safety</div>
               {result.security.content_safety.map((c) => (
-                <div key={c.check} className="flex items-center gap-2 mb-2 text-sm">
+                <div key={c.check} className="security-item">
                   <StatusBadge
                     status={
                       c.status === "passed"
@@ -279,40 +269,38 @@ export function DeployDashboard() {
                 </div>
               ))}
             </div>
-            <div className="bg-white rounded-lg border p-4">
-              <h4 className="text-sm font-semibold text-gray-500 mb-3">Evaluation</h4>
+            <div className="security-card">
+              <div className="security-card-title">Evaluation</div>
               {result.evaluation ? (
-                <div className="space-y-2">
-                  <div className="text-sm">
-                    <span className="text-gray-500">Test Cases:</span>{" "}
-                    <span className="font-semibold">{result.evaluation.test_count}</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-sm)" }}>
+                  <div className="security-item">
+                    <span style={{ color: "var(--color-text-tertiary)" }}>Test Cases:</span>
+                    <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>{result.evaluation.test_count}</span>
                   </div>
-                  <div className="text-sm">
-                    <span className="text-gray-500">Passed:</span>{" "}
-                    <span className="font-semibold text-green-600">
-                      {result.evaluation.passed}
-                    </span>
+                  <div className="security-item">
+                    <span style={{ color: "var(--color-text-tertiary)" }}>Passed:</span>
+                    <span style={{ fontWeight: 600, color: "var(--color-pass)" }}>{result.evaluation.passed}</span>
                   </div>
-                  <div className="text-sm">
-                    <span className="text-gray-500">Accuracy:</span>{" "}
-                    <span className="font-semibold">{result.evaluation.accuracy}%</span>
+                  <div className="security-item">
+                    <span style={{ color: "var(--color-text-tertiary)" }}>Accuracy:</span>
+                    <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>{result.evaluation.accuracy}%</span>
                   </div>
                 </div>
               ) : (
-                <div className="text-sm text-gray-400">Evaluation skipped</div>
+                <div className="text-sm" style={{ color: "var(--color-text-disabled)" }}>Evaluation skipped</div>
               )}
             </div>
           </div>
 
           {/* Summary */}
           <div
-            className={`rounded-lg border p-4 text-sm ${
-              result.summary.errors === 0
-                ? "bg-green-50 text-green-800 border-green-200"
-                : "bg-amber-50 text-amber-800 border-amber-200"
-            }`}
+            className="card"
+            style={{
+              borderLeft: `4px solid ${result.summary.errors === 0 ? "var(--color-pass)" : "var(--color-warn)"}`,
+              fontSize: "13px",
+            }}
           >
-            <span className="font-semibold">
+            <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
               {result.mode === "live" ? "Live" : "Simulated"} Deployment:
             </span>{" "}
             {result.summary.agents_deployed} agents deployed |{" "}
@@ -321,7 +309,7 @@ export function DeployDashboard() {
             {result.summary.total_duration_ms < 1000
               ? `${result.summary.total_duration_ms}ms`
               : `${(result.summary.total_duration_ms / 1000).toFixed(1)}s`}{" "}
-            total | Pipeline: {result.pipeline_id}
+            total | Pipeline: <span style={{ fontFamily: "var(--font-mono)" }}>{result.pipeline_id}</span>
           </div>
         </>
       )}

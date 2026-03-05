@@ -2,7 +2,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { createServer } from "node:http";
 import { z } from "zod";
-import { checkPolicy, flagRisk, getPolicyRules } from "./engine.js";
+import { checkPolicy, flagRisk, getPolicyRules, addPolicyRule, updatePolicyRule, deletePolicyRule } from "./engine.js";
+import { PolicyRule } from "./policyEngine.js";
 
 const PORT = parseInt(process.env["MCP_COMPLIANCE_PORT"] ?? "9003", 10);
 
@@ -54,6 +55,45 @@ server.tool(
   async () => {
     const rules = await getPolicyRules();
     return { content: [{ type: "text" as const, text: JSON.stringify(rules) }] };
+  },
+);
+
+server.tool(
+  "add_policy_rule",
+  "Add a new dynamic policy rule",
+  {
+    rule: z.string().describe("JSON object containing the policy rule definition"),
+  },
+  async ({ rule }) => {
+    const parsedRule = JSON.parse(rule) as PolicyRule;
+    await addPolicyRule(parsedRule);
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, message: "Policy rule added successfully" }) }] };
+  },
+);
+
+server.tool(
+  "update_policy_rule",
+  "Update an existing policy rule",
+  {
+    rule_id: z.string().describe("ID of the policy rule to update"),
+    updates: z.string().describe("JSON object containing the fields to update"),
+  },
+  async ({ rule_id, updates }) => {
+    const parsedUpdates = JSON.parse(updates) as Partial<PolicyRule>;
+    const success = await updatePolicyRule(rule_id, parsedUpdates);
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success, message: success ? "Policy rule updated successfully" : "Policy rule not found" }) }] };
+  },
+);
+
+server.tool(
+  "delete_policy_rule",
+  "Delete a policy rule",
+  {
+    rule_id: z.string().describe("ID of the policy rule to delete"),
+  },
+  async ({ rule_id }) => {
+    const success = await deletePolicyRule(rule_id);
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success, message: success ? "Policy rule deleted successfully" : "Policy rule not found" }) }] };
   },
 );
 
