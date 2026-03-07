@@ -81,8 +81,9 @@ export async function runPipeline(
   filename: string,
   adapter: ILlmAdapter,
   broadcast: WsBroadcast,
+  providedContractId?: string,
 ): Promise<PipelineResult> {
-  const contractId = `contract-${randomUUID().slice(0, 8)}`;
+  const contractId = providedContractId ?? `contract-${randomUUID().slice(0, 8)}`;
   const traceId = `trace-${randomUUID().slice(0, 8)}`;
   const traces: TraceEntry[] = [];
 

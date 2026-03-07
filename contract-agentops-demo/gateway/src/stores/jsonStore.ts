@@ -4,6 +4,7 @@ import { dirname } from "node:path";
 export class JsonStore<T extends { id: string }> {
   private items: T[] = [];
   private loaded = false;
+  private writeQueue: Promise<void> = Promise.resolve();
 
   constructor(private readonly filePath: string) {}
 
@@ -66,7 +67,10 @@ export class JsonStore<T extends { id: string }> {
   }
 
   private async save(): Promise<void> {
-    await mkdir(dirname(this.filePath), { recursive: true });
-    await writeFile(this.filePath, JSON.stringify(this.items, null, 2), "utf-8");
+    this.writeQueue = this.writeQueue.then(async () => {
+      await mkdir(dirname(this.filePath), { recursive: true });
+      await writeFile(this.filePath, JSON.stringify(this.items, null, 2), "utf-8");
+    });
+    await this.writeQueue;
   }
 }

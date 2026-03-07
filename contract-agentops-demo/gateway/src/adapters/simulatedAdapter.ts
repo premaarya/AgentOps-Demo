@@ -42,6 +42,7 @@ export class SimulatedAdapter implements ILlmAdapter {
     } else if (lowerPrompt.includes("approv") || lowerPrompt.includes("risk") || lowerPrompt.includes("route")) {
       stage = "approval";
     } else {
+      console.warn(`[SimulatedAdapter] No keyword match for prompt, defaulting to intake. Prompt start: "${prompt.slice(0, 80)}..."`);
       stage = "intake";
     }
 

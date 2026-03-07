@@ -40,20 +40,26 @@ server.tool(
   },
 );
 
-let transport: SSEServerTransport | undefined;
+const transports = new Map<string, SSEServerTransport>();
 
 const httpServer = createServer(async (req, res) => {
-  if (req.method === "GET" && req.url === "/sse") {
-    transport = new SSEServerTransport("/messages", res);
+  const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
+
+  if (req.method === "GET" && url.pathname === "/sse") {
+    const transport = new SSEServerTransport("/messages", res);
+    transports.set(transport.sessionId, transport);
+    res.on("close", () => transports.delete(transport.sessionId));
     await server.connect(transport);
-  } else if (req.method === "POST" && req.url === "/messages") {
+  } else if (req.method === "POST" && url.pathname === "/messages") {
+    const sessionId = url.searchParams.get("sessionId");
+    const transport = sessionId ? transports.get(sessionId) : undefined;
     if (transport) {
       await transport.handlePostMessage(req, res);
     } else {
       res.writeHead(503);
       res.end("Server not connected");
     }
-  } else if (req.method === "GET" && req.url === "/health") {
+  } else if (req.method === "GET" && url.pathname === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ status: "ok", server: "contract-drift-mcp" }));
   } else {

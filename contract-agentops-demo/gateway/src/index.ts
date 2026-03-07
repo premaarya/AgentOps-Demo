@@ -23,13 +23,25 @@ export async function startGateway(): Promise<void> {
   const app = Fastify({ logger: appConfig.logLevel === "DEBUG" });
 
   await app.register(cors, {
-    origin: true,
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:8000",
+      `http://localhost:${appConfig.dashboardPort}`,
+      `http://localhost:${appConfig.gatewayPort}`,
+    ],
   });
 
-  // Serve the dashboard UI as static files
+  // Serve the static UI as default
   await app.register(fastifyStatic, {
     root: resolve(__dirname, "../../ui"),
     prefix: "/",
+  });
+
+  // Serve the React dashboard build at /dashboard
+  await app.register(fastifyStatic, {
+    root: resolve(__dirname, "../../dashboard/dist"),
+    prefix: "/dashboard/",
+    decorateReply: false,
   });
 
   await app.register(websocket);

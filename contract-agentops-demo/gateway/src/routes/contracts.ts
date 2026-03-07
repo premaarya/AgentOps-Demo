@@ -35,11 +35,11 @@ export async function contractRoutes(app: FastifyInstance): Promise<void> {
 
     const filename = typeof body.filename === "string" ? body.filename : "unnamed-contract.txt";
 
-    // Run pipeline asynchronously, return 202 immediately
+    // Generate contractId upfront and pass to pipeline for consistency
     const contractId = `contract-${randomUUID().slice(0, 8)}`;
 
     // Start pipeline in background
-    runPipeline(body.text, filename, adapter, broadcast)
+    runPipeline(body.text, filename, adapter, broadcast, contractId)
       .then((result) => storeTraces(result.contract.id, result.traces))
       .catch((err) => {
         console.error("Pipeline error:", err);

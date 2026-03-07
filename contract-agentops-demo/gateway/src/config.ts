@@ -49,3 +49,12 @@ export const MCP_SERVERS = [
   { name: "contract-drift-mcp", port: appConfig.mcpBasePort + 6 },
   { name: "contract-feedback-mcp", port: appConfig.mcpBasePort + 7 },
 ] as const;
+
+// Validate required env vars when running in live mode
+if (appConfig.demoMode === "live") {
+  const required = ["FOUNDRY_API_KEY", "FOUNDRY_ENDPOINT", "FOUNDRY_PROJECT_ENDPOINT"] as const;
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length > 0) {
+    throw new Error(`Live mode requires environment variables: ${missing.join(", ")}. Set them in .env or export them.`);
+  }
+}

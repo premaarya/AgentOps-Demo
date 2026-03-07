@@ -25,9 +25,7 @@ hooks:
           --retry 3 --retry-delay 10 --max-time 120 \
           -o /tmp/deploy-result.json -w "\nHTTP Status: %{http_code}\n"
         cat /tmp/deploy-result.json 2>/dev/null || true
-      else
-        echo "WARNING: Could not determine app URL. Run agent registration manually."
-      fi
+
       else
         echo "WARNING: Could not determine app FQDN. Run agent registration manually."
       fi
