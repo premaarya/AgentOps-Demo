@@ -56,31 +56,31 @@ export function FeedbackLoop() {
   }, []);
 
   async function loadSummary() {
-    const data = await get("/api/v1/feedback/summary") as FeedbackSummary | null;
+    const data = await get("/feedback/summary") as FeedbackSummary | null;
     if (data) setSummary(data);
   }
 
   async function loadPrompt(agent: string) {
-    const data = await get(`/api/v1/prompts/${agent}`) as { prompt: string } | null;
+    const data = await get(`/prompts/${agent}`) as { prompt: string } | null;
     if (data) setPrompt(data.prompt);
     setPromptSaved(false);
   }
 
   async function submitFeedback() {
     if (!form.contract_id || !form.comment) return;
-    await post("/api/v1/feedback", form);
+    await post("/feedback", form);
     setForm({ contract_id: "", agent: "extraction", sentiment: "negative", comment: "", reviewer: "" });
     await loadSummary();
   }
 
   async function runOptimize() {
-    const data = await post("/api/v1/feedback/optimize", {}) as OptimizeResult | null;
+    const data = await post("/feedback/optimize", {}) as OptimizeResult | null;
     if (data) setOptimizeResult(data);
     await loadSummary();
   }
 
   async function savePrompt() {
-    await post(`/api/v1/prompts/${selectedAgent}`, { prompt });
+    await post(`/prompts/${selectedAgent}`, { prompt });
     setPromptSaved(true);
   }
 

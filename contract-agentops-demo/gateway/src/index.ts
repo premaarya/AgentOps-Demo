@@ -13,6 +13,8 @@ import { evaluationRoutes } from "./routes/evaluations.js";
 import { driftRoutes } from "./routes/drift.js";
 import { feedbackRoutes } from "./routes/feedback.js";
 import { deployRoutes } from "./routes/deploy.js";
+import { promptRoutes } from "./routes/prompts.js";
+import { sampleContractRoutes } from "./routes/sampleContracts.js";
 import { addWsClient } from "./websocket/workflowWs.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -83,6 +85,8 @@ export async function startGateway(): Promise<void> {
   await app.register(driftRoutes);
   await app.register(feedbackRoutes);
   await app.register(deployRoutes);
+  await app.register(promptRoutes);
+  await app.register(sampleContractRoutes);
 
   await app.listen({ port: appConfig.gatewayPort, host: "0.0.0.0" });
   console.log(`Gateway listening on http://localhost:${appConfig.gatewayPort}`);

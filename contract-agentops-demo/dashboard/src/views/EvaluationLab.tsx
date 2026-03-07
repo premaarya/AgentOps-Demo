@@ -39,17 +39,17 @@ export function EvaluationLab() {
   }, []);
 
   async function loadResults() {
-    const data = await get("/api/v1/evaluations/results") as EvalResult[] | null;
+    const data = await get("/evaluations/results") as EvalResult[] | null;
     if (data && Array.isArray(data)) {
       setResults(data);
       if (data.length > 0) setLatest(data[data.length - 1]);
     }
-    const bl = await get("/api/v1/evaluations/baseline") as unknown as BaselineComparison | null;
+    const bl = await get("/evaluations/baseline") as unknown as BaselineComparison | null;
     if (bl) setBaseline(bl);
   }
 
   async function runSuite() {
-    const data = await post("/api/v1/evaluations/run", { version }) as EvalResult | null;
+    const data = await post("/evaluations/run", { version }) as EvalResult | null;
     if (data && "id" in data) {
       setLatest(data);
       setResults((prev) => [...prev, data]);

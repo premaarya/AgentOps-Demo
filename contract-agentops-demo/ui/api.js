@@ -6,6 +6,7 @@
 var GATEWAY_URL = 'http://localhost:8000';
 var dashboardMode = 'simulated'; // 'simulated' | 'real'
 var ws = null; // WebSocket connection for live workflow
+var currentContractId = null; // Track the active contract ID for HITL
 
 // --- Mode Toggle ---
 function setMode(mode) {
@@ -162,14 +163,18 @@ function startWorkflowReal() {
   log.innerHTML = '';
   document.getElementById('contract-details').style.display = 'flex';
 
-  // Get contract text (use the sample from the UI's input field or default)
-  var contractText = 'This Non-Disclosure Agreement is entered into between Acme Corp and Beta Inc effective March 1, 2026. Recipient shall not disclose any Confidential Information for a period of 2 years. Liability cap: $2,500,000.';
+  // Get contract text from the drop area or use default sample
+  var dropAreaEl = document.getElementById('drop-area');
+  var contractText = (dropAreaEl && dropAreaEl.dataset.contractText)
+    ? dropAreaEl.dataset.contractText
+    : 'This Non-Disclosure Agreement is entered into between Acme Corp and Beta Inc effective March 1, 2026. Recipient shall not disclose any Confidential Information for a period of 2 years. Liability cap: $2,500,000.';
 
   // Submit contract to gateway
   addLog(new Date().toLocaleTimeString(), 'System', 'Submitting contract to gateway...');
 
   apiCall('POST', '/api/v1/contracts', { text: contractText, filename: 'NDA.pdf' })
     .then(function (data) {
+      currentContractId = data.contract_id;
       addLog(new Date().toLocaleTimeString(), 'System', 'Contract submitted: ' + data.contract_id);
       // Connect WebSocket for real-time updates
       connectWorkflowWs(data.contract_id);
@@ -288,13 +293,15 @@ function resolveHitlReal(decision) {
   var comment = document.querySelector('.hitl-comment').value || '';
 
   // If we have a contract ID from the WebSocket, submit review
-  apiCall('POST', '/api/v1/contracts/latest/review', {
-    decision: decision === 'approved' ? 'approve' : (decision === 'rejected' ? 'reject' : 'request_changes'),
-    reviewer: 'demo-user',
-    comment: comment
-  }).catch(function () {
-    // Non-critical - the UI already shows the result
-  });
+  if (currentContractId) {
+    apiCall('POST', '/api/v1/contracts/' + currentContractId + '/review', {
+      decision: decision === 'approved' ? 'approve' : (decision === 'rejected' ? 'reject' : 'request_changes'),
+      reviewer: 'demo-user',
+      comment: comment
+    }).catch(function () {
+      // Non-critical - the UI already shows the result
+    });
+  }
 
   // Update UI same as simulated
   var statusMap = {

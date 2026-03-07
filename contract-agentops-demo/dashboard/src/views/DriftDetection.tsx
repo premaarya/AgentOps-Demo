@@ -50,14 +50,14 @@ export function DriftDetection() {
   }, []);
 
   async function loadDrift() {
-    const llm = await get("/api/v1/drift/llm") as LlmDrift | null;
-    const data = await get("/api/v1/drift/data") as DataDrift | null;
+    const llm = await get("/drift/llm") as LlmDrift | null;
+    const data = await get("/drift/data") as DataDrift | null;
     if (llm) setLlmDrift(llm);
     if (data) setDataDrift(data);
   }
 
   async function runModelSwap() {
-    const data = await post("/api/v1/drift/model-swap", {}) as ModelSwap | null;
+    const data = await post("/drift/model-swap", {}) as ModelSwap | null;
     if (data) setModelSwap(data);
   }
 
