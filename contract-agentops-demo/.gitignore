@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.env
+*.log
+logs/
+.DS_Store
+coverage/
+
+# TypeScript build artifacts
+*.d.ts
+*.d.ts.map
+*.js.map
+*.tsbuildinfo
+
+# Compiled JS in src directories (keep source .ts only)
+agents/src/*.js
+gateway/src/*.js
+
+# Binary documents
+*.docx

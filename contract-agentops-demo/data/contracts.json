@@ -1,0 +1,32 @@
+[
+  {
+    "id": "contract-8aa2ff1d",
+    "filename": "NDA-Acme-Beta-2026.txt",
+    "text": "Sample contract: NDA-Acme-Beta-2026.txt",
+    "status": "approved",
+    "submitted_at": "2026-03-05T19:36:56.422Z",
+    "type": "NDA",
+    "classification_confidence": 0.96,
+    "completed_at": "2026-03-05T19:36:59.004Z"
+  },
+  {
+    "id": "contract-834a51dc",
+    "filename": "nda-test.txt",
+    "text": "This Non-Disclosure Agreement is between Party A and Party B...",
+    "status": "approved",
+    "submitted_at": "2026-03-07T06:34:26.359Z",
+    "type": "NDA",
+    "classification_confidence": 0.95,
+    "completed_at": "2026-03-07T06:34:26.412Z"
+  },
+  {
+    "id": "contract-custom42",
+    "filename": "nda-id.txt",
+    "text": "This NDA is between X and Y...",
+    "status": "approved",
+    "submitted_at": "2026-03-07T06:34:26.433Z",
+    "type": "NDA",
+    "classification_confidence": 0.95,
+    "completed_at": "2026-03-07T06:34:26.477Z"
+  }
+]

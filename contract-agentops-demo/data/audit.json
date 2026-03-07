@@ -1,0 +1,98 @@
+[
+  {
+    "id": "db6ff906-e857-4018-8200-d91d12f8e1ce",
+    "contract_id": "contract-8aa2ff1d",
+    "agent": "intake",
+    "action": "classified",
+    "reasoning": "Classified as NDA with 0.96 confidence",
+    "timestamp": "2026-03-05T19:36:56.930Z"
+  },
+  {
+    "id": "686dfae9-755c-4aa7-8e65-3d2b2377440f",
+    "contract_id": "contract-8aa2ff1d",
+    "agent": "extraction",
+    "action": "extracted",
+    "reasoning": "Extracted 4 clauses",
+    "timestamp": "2026-03-05T19:36:57.730Z"
+  },
+  {
+    "id": "b85fd493-1e47-4bbc-82bd-2a3e77fffc9c",
+    "contract_id": "contract-8aa2ff1d",
+    "agent": "compliance",
+    "action": "flagged",
+    "reasoning": "Risk: medium, Flags: 0",
+    "timestamp": "2026-03-05T19:36:58.260Z"
+  },
+  {
+    "id": "e68565bf-8a38-4c14-b536-9b87c30da9b8",
+    "contract_id": "contract-8aa2ff1d",
+    "agent": "approval",
+    "action": "approved",
+    "reasoning": "NDA with standard terms, no policy violations, both parties are established corporations. Low-risk confidentiality agreement with reasonable liability cap and standard termination provisions.",
+    "timestamp": "2026-03-05T19:36:59.006Z"
+  },
+  {
+    "id": "885d3f4e-f1f5-457e-bc18-0922ea109084",
+    "contract_id": "contract-834a51dc",
+    "agent": "intake",
+    "action": "classified",
+    "reasoning": "Classified as NDA with 0.95 confidence",
+    "timestamp": "2026-03-07T06:34:26.382Z"
+  },
+  {
+    "id": "5a467006-02bd-4b60-b8ab-78203b80a8b0",
+    "contract_id": "contract-834a51dc",
+    "agent": "extraction",
+    "action": "extracted",
+    "reasoning": "Extracted 2 clauses",
+    "timestamp": "2026-03-07T06:34:26.392Z"
+  },
+  {
+    "id": "d1eb423b-aaeb-49d9-b627-c1bbea2c9d9c",
+    "contract_id": "contract-834a51dc",
+    "agent": "compliance",
+    "action": "flagged",
+    "reasoning": "Risk: medium, Flags: 0",
+    "timestamp": "2026-03-07T06:34:26.402Z"
+  },
+  {
+    "id": "e7eca3e6-197c-4dab-8b5e-ab68dfdedb80",
+    "contract_id": "contract-834a51dc",
+    "agent": "approval",
+    "action": "approved",
+    "reasoning": "Low risk, no flags",
+    "timestamp": "2026-03-07T06:34:26.420Z"
+  },
+  {
+    "id": "d6958458-1699-42d2-85e4-974273f22521",
+    "contract_id": "contract-custom42",
+    "agent": "intake",
+    "action": "classified",
+    "reasoning": "Classified as NDA with 0.95 confidence",
+    "timestamp": "2026-03-07T06:34:26.450Z"
+  },
+  {
+    "id": "b1e43410-78e3-474d-a107-afc58b3843d6",
+    "contract_id": "contract-custom42",
+    "agent": "extraction",
+    "action": "extracted",
+    "reasoning": "Extracted 2 clauses",
+    "timestamp": "2026-03-07T06:34:26.459Z"
+  },
+  {
+    "id": "7113a49c-1c32-41b8-b335-0fae58a3cb8c",
+    "contract_id": "contract-custom42",
+    "agent": "compliance",
+    "action": "flagged",
+    "reasoning": "Risk: medium, Flags: 0",
+    "timestamp": "2026-03-07T06:34:26.468Z"
+  },
+  {
+    "id": "1ada6647-16e4-485a-a1d6-193ea4b4f293",
+    "contract_id": "contract-custom42",
+    "agent": "approval",
+    "action": "approved",
+    "reasoning": "Low risk, no flags",
+    "timestamp": "2026-03-07T06:34:26.483Z"
+  }
+]
