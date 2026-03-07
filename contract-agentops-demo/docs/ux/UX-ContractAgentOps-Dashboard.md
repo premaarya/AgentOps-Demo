@@ -1,5 +1,7 @@
 # UX Design: Contract AgentOps Dashboard
 
+> **Architecture Update (2026-03-07)**: The React dashboard has been archived. The primary UI is now a static vanilla HTML/CSS/JS dashboard under `ui/`, served at `http://localhost:8000`. UX patterns described below were implemented in the static UI.
+
 **Feature**: Contract AgentOps Demo Dashboard
 **Epic**: Contract AgentOps Demo
 **Status**: Draft

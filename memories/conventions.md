@@ -1,0 +1,4 @@
+- 2026-03-07: The active application root is contract-agentops-demo; root-level agents and mcp-servers are separate from the runnable app workspace.
+- 2026-03-07: Main quality gates for the app are npm test, npm run typecheck, npm run build, and npm run lint from contract-agentops-demo.
+- 2026-03-07: npm run lint now passes (exit 0) with biome.json config in place. 25 warnings (noForEach, noExplicitAny) are acceptable; 0 errors.
+- 2026-03-07: The primary runtime UI is the static app under contract-agentops-demo/ui, served by the gateway at http://localhost:8000.

@@ -1,0 +1,4 @@
+- 2026-03-07: Review scope centered on the runnable workspace under contract-agentops-demo, then checked top-level duplication only where it affected wiring or drift.
+- 2026-03-07: Archived the React dashboard from runtime by removing gateway/startup wiring while keeping the folder in the repo for reference.
+- 2026-03-07: Removed dashboard from npm workspaces array; dashboardPort removed from gateway config; CORS simplified to gateway origin only.
+- 2026-03-07: Created biome.json excluding dashboard/, docs/ux/prototypes/, with noForEach/noExplicitAny/noNonNullAssertion demoted to warnings.

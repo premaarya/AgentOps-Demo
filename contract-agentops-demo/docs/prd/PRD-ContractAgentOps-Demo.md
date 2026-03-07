@@ -1,5 +1,7 @@
 # PRD: Contract AgentOps Demo - Microsoft Foundry
 
+> **Architecture Update (2026-03-07)**: The React dashboard has been archived. The primary UI is now a static vanilla HTML/CSS/JS dashboard under `ui/`, served at `http://localhost:8000`. References to "React dashboard" below are historical.
+
 **Epic**: Contract AgentOps Demo
 **Status**: Draft
 **Author**: Product Manager Agent

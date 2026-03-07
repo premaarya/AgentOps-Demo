@@ -100,7 +100,7 @@ Each agent specializes in a specific aspect of contract analysis, with built-in 
 - **Accuracy degradation alerts** with automatic model refresh triggers
 - **Comparative analysis** against baseline performance metrics
 
-### Web Dashboard
+### Static UI
 - **Real-Time Processing Monitoring** with live updates
 - **Policy Management Interface** for dynamic rule configuration
 - **Evaluation Results Visualization** with accuracy metrics and trends
@@ -127,26 +127,22 @@ npm install
 cp .env.example .env
 # Edit .env with your configuration
 
-# Initialize MCP servers
-npm run setup:mcp
-
-# Start the system
+# Start the full local stack (UI + gateway + MCP servers)
 npm start
+
+# Open the UI
+# http://localhost:8000
 ```
 
 ### Development Mode
 
 ```bash
-# Start with file watching
-npm run dev
-
 # Run tests
 npm test
 
-# Test specific components
-npm run test:pipeline
-npm run test:policies
-npm run test:evaluation
+# Run the standalone deployment smoke scripts
+npx tsx tests/test-comprehensive.ts
+npx tsx tests/test-deployment.ts
 ```
 
 ## 🧪 Testing & Validation
@@ -167,9 +163,10 @@ Tests coverage:
 - ✅ Full compliance workflow end-to-end
 - ✅ Edge cases and error handling
 
-#### 2. Pipeline Integration Tests
+#### 2. Pipeline + Deployment Smoke Tests
 ```bash
-npm run test:pipeline
+npx tsx tests/test-comprehensive.ts
+npx tsx tests/test-deployment.ts
 ```
 Tests coverage:
 - ✅ 4-agent pipeline orchestration
@@ -179,7 +176,7 @@ Tests coverage:
 
 #### 3. Evaluation Framework Tests
 ```bash
-npm run test:evaluation
+npm test
 ```
 Tests coverage:
 - ✅ 50+ ground truth test cases
@@ -187,25 +184,24 @@ Tests coverage:
 - ✅ Performance benchmarking
 - ✅ Adversarial scenario validation
 
-### Test API Endpoints
+### Useful API Endpoints
 
-The system provides comprehensive testing endpoints:
+The gateway serves the static UI at `http://localhost:8000` and exposes these endpoints:
 
 ```bash
-# Test full pipeline
-curl -X POST http://localhost:3000/api/test-pipeline \
-  -H "Content-Type: application/json" \
-  -d '{"test_type": "comprehensive"}'
+# Gateway health
+curl http://localhost:8000/api/v1/health
 
-# Test specific agents
-curl -X POST http://localhost:3000/api/test-agent/intake \
-  -H "Content-Type: application/json" \
-  -d '{"contract_text": "...", "test_scenarios": ["basic", "edge_cases"]}'
+# MCP tool registry
+curl http://localhost:8000/api/v1/tools
 
-# Test policy engine
-curl -X POST http://localhost:3000/api/test-policies \
+# Submit a contract for processing
+curl -X POST http://localhost:8000/api/v1/contracts \
   -H "Content-Type: application/json" \
-  -d '{"clause_type": "liability", "test_cases": ["high_limit", "unlimited"]}'
+  -d '{"text": "This NDA is entered into between Acme and Beta...", "filename": "sample-nda.txt"}'
+
+# Read evaluation history
+curl http://localhost:8000/api/v1/evaluations/results
 ```
 
 ## 📊 System Metrics & Monitoring

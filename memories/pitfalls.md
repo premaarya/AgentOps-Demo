@@ -1,0 +1,3 @@
+- 2026-03-07: npm start currently fails because prompt routes are registered in both gateway/src/routes/prompts.ts and gateway/src/routes/feedback.ts.
+- 2026-03-07: Standalone scripts tests/test-comprehensive.ts and tests/test-deployment.ts are not covered by Vitest and fail due to bad relative imports.
+- 2026-03-07: The legacy static UI under contract-agentops-demo/ui is still served by the gateway and contains stale MCP/tool names.

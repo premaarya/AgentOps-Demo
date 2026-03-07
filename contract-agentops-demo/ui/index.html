@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=1920, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contract AgentOps Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -65,95 +65,25 @@
   <!-- ===== Main Content ===== -->
   <main class="main-content">
 
-    <!-- ========== VIEW 1: Design Canvas ========== -->
+    <!-- ========== VIEW 1: Design Canvas (Interactive Workflow Designer) ========== -->
     <section id="view-design" class="view active" role="tabpanel" aria-label="Design Canvas">
       <div class="view-header">
         <h1 class="view-title">Design Canvas</h1>
-        <button class="btn btn-outline" onclick="resetLayout()">Reset Layout</button>
       </div>
 
-      <div class="agent-pipeline">
-        <!-- Intake Agent -->
-        <div class="agent-card" data-agent="intake" onclick="toggleAgentDetail(this)">
-          <div class="agent-card-icon">I</div>
-          <div class="agent-card-name">Intake Agent</div>
-          <div class="agent-card-model">Model: GPT-4o</div>
-          <div class="agent-card-section">
-            <div class="agent-card-section-title">Tools</div>
-            <div class="agent-card-tool">- upload_contract</div>
-            <div class="agent-card-tool">- classify_doc</div>
-            <div class="agent-card-tool">- extract_meta</div>
-          </div>
-          <div class="agent-card-section">
-            <div class="agent-card-section-title">Boundary</div>
-            <div class="agent-card-boundary">Classify only</div>
-          </div>
-        </div>
+      <!-- Designer Toolbar: name, type, actions -->
+      <div class="designer-toolbar" id="designer-toolbar"></div>
 
-        <div class="pipeline-arrow">--&gt;</div>
-
-        <!-- Extraction Agent -->
-        <div class="agent-card" data-agent="extraction" onclick="toggleAgentDetail(this)">
-          <div class="agent-card-icon">E</div>
-          <div class="agent-card-name">Extraction Agent</div>
-          <div class="agent-card-model">Model: GPT-4o</div>
-          <div class="agent-card-section">
-            <div class="agent-card-section-title">Tools</div>
-            <div class="agent-card-tool">- extract_clauses</div>
-            <div class="agent-card-tool">- identify_parties</div>
-            <div class="agent-card-tool">- extract_dates</div>
-          </div>
-          <div class="agent-card-section">
-            <div class="agent-card-section-title">Boundary</div>
-            <div class="agent-card-boundary">Extract only</div>
-          </div>
-        </div>
-
-        <div class="pipeline-arrow">--&gt;</div>
-
-        <!-- Compliance Agent -->
-        <div class="agent-card" data-agent="compliance" onclick="toggleAgentDetail(this)">
-          <div class="agent-card-icon">C</div>
-          <div class="agent-card-name">Compliance Agent</div>
-          <div class="agent-card-model">Model: GPT-4o</div>
-          <div class="agent-card-section">
-            <div class="agent-card-section-title">Tools</div>
-            <div class="agent-card-tool">- check_policy</div>
-            <div class="agent-card-tool">- flag_risk</div>
-            <div class="agent-card-tool">- get_rules</div>
-          </div>
-          <div class="agent-card-section">
-            <div class="agent-card-section-title">Boundary</div>
-            <div class="agent-card-boundary">Flag only</div>
-          </div>
-        </div>
-
-        <div class="pipeline-arrow">--&gt;</div>
-
-        <!-- Approval Agent -->
-        <div class="agent-card" data-agent="approval" onclick="toggleAgentDetail(this)">
-          <div class="agent-card-icon">A</div>
-          <div class="agent-card-name">Approval Agent</div>
-          <div class="agent-card-model">Model: GPT-4o</div>
-          <div class="agent-card-section">
-            <div class="agent-card-section-title">Tools</div>
-            <div class="agent-card-tool">- route_approval</div>
-            <div class="agent-card-tool">- escalate_to_human</div>
-            <div class="agent-card-tool">- notify</div>
-          </div>
-          <div class="agent-card-section">
-            <div class="agent-card-section-title">Boundary</div>
-            <div class="agent-card-boundary">Route only</div>
-          </div>
-        </div>
+      <!-- Interactive Agent Canvas -->
+      <div class="designer-canvas-wrapper">
+        <div class="agent-pipeline" id="designer-canvas"></div>
       </div>
 
-      <div class="agent-inventory">
-        <div class="agent-inventory-item"><strong>Total Agents:</strong> 4</div>
-        <div class="agent-inventory-item"><strong>MCP Tools:</strong> 12</div>
-        <div class="agent-inventory-item"><strong>Model:</strong> GPT-4o</div>
-        <div class="agent-inventory-item"><strong>Pipeline:</strong> Sequential + HITL</div>
-      </div>
+      <!-- Inventory Bar -->
+      <div class="agent-inventory" id="designer-inventory"></div>
+
+      <!-- Modal container (agent edit, load workflow) -->
+      <div class="designer-modal" id="designer-modal"></div>
     </section>
 
     <!-- ========== VIEW 2: Build Console ========== -->
@@ -172,13 +102,13 @@
           <option>contract-extraction-mcp</option>
           <option>contract-intake-mcp</option>
           <option>contract-compliance-mcp</option>
-          <option>contract-approval-mcp</option>
+          <option>contract-workflow-mcp</option>
         </select>
         <label style="font-size:13px;color:var(--color-text-tertiary)">Tool:</label>
         <select class="select" id="tool-select">
           <option>extract_clauses</option>
           <option>identify_parties</option>
-          <option>extract_dates</option>
+          <option>extract_dates_values</option>
         </select>
       </div>
 
@@ -211,7 +141,7 @@
         <div class="tool-registry-list">
           <div class="tool-registry-item"><span class="badge badge-pass">[PASS]</span> extract_clauses</div>
           <div class="tool-registry-item"><span class="badge badge-pass">[PASS]</span> identify_parties</div>
-          <div class="tool-registry-item"><span class="badge badge-pass">[PASS]</span> extract_dates</div>
+          <div class="tool-registry-item"><span class="badge badge-pass">[PASS]</span> extract_dates_values</div>
         </div>
       </div>
     </section>
@@ -404,8 +334,8 @@
                 <span class="trace-agent-time">1.2s</span>
               </div>
               <div class="trace-tools">
-                <div class="trace-tool"><span class="trace-tool-time">0.4s</span> classify_doc <span class="badge badge-pass">[PASS]</span></div>
-                <div class="trace-tool"><span class="trace-tool-time">0.8s</span> extract_meta <span class="badge badge-pass">[PASS]</span></div>
+                <div class="trace-tool"><span class="trace-tool-time">0.4s</span> classify_document <span class="badge badge-pass">[PASS]</span></div>
+                <div class="trace-tool"><span class="trace-tool-time">0.8s</span> extract_metadata <span class="badge badge-pass">[PASS]</span></div>
               </div>
             </div>
             <div class="trace-agent">
@@ -417,7 +347,7 @@
               <div class="trace-tools">
                 <div class="trace-tool"><span class="trace-tool-time">1.9s</span> extract_clauses <span class="badge badge-pass">[PASS]</span></div>
                 <div class="trace-tool"><span class="trace-tool-time">0.5s</span> identify_parties <span class="badge badge-pass">[PASS]</span></div>
-                <div class="trace-tool"><span class="trace-tool-time">0.4s</span> extract_dates <span class="badge badge-pass">[PASS]</span></div>
+                <div class="trace-tool"><span class="trace-tool-time">0.4s</span> extract_dates_values <span class="badge badge-pass">[PASS]</span></div>
               </div>
             </div>
             <div class="trace-agent">
@@ -847,5 +777,6 @@
 
 <script src="api.js"></script>
 <script src="app.js"></script>
+<script src="workflow-designer.js"></script>
 </body>
 </html>

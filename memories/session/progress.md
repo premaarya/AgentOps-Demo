@@ -1,0 +1,2 @@
+- 2026-03-07: Static UI path is now the working runtime. Verified: npm start boots successfully on Windows, GET /api/v1/health is healthy, GET /api/v1/tools returns all 8 MCP servers, npm test passes, and standalone scripts test-comprehensive.ts plus test-deployment.ts pass.
+- 2026-03-07: Cleanup complete — dashboard retired from workspaces, dashboardPort removed, CORS cleaned, biome.json created, all formatting auto-fixed, docs updated with archival notices. Tests 49/49, lint 0 errors. Ready for next phase.

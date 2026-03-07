@@ -1,5 +1,7 @@
 # ADR: Contract AgentOps Demo Architecture
 
+> **Architecture Update (2026-03-07)**: The React dashboard (`dashboard/`) has been archived. The primary UI is now a static vanilla HTML/CSS/JS dashboard under `ui/`, served by the gateway at `http://localhost:8000`. References to "React dashboard" and port 3000 below are historical.
+
 **Decision ID**: ADR-ContractAgentOps
 **Decision Title**: Architecture for Contract AgentOps Demo System
 **Epic**: Contract AgentOps Demo

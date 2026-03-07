@@ -59,7 +59,9 @@ inputs:
 
 ### Feature Summary
 
-An end-to-end Contract AgentOps Demo system consisting of 8 MCP servers (TypeScript/@modelcontextprotocol/sdk), 4 AI agents (Microsoft Foundry GPT-4o), a Fastify API gateway (TypeScript) with WebSocket, and an 8-view React dashboard. The system demonstrates 8 AgentOps lifecycle stages: Design, Build, Deploy, Run, Monitor, Evaluate, Detect (Drift), and Feedback.
+An end-to-end Contract AgentOps Demo system consisting of 8 MCP servers (TypeScript/@modelcontextprotocol/sdk), 4 AI agents (Microsoft Foundry GPT-4o), a Fastify API gateway (TypeScript) with WebSocket, and a static dashboard UI (vanilla HTML/CSS/JS). The system demonstrates 8 AgentOps lifecycle stages: Design, Build, Deploy, Run, Monitor, Evaluate, Detect (Drift), and Feedback.
+
+> **Architecture Update (2026-03-07)**: The React dashboard (`dashboard/`) has been archived. The primary UI is now the static dashboard under `ui/` served by the gateway at `http://localhost:8000`. All port 3000 references in this spec are historical.
 
 ### Technical Scope
 
@@ -68,7 +70,7 @@ An end-to-end Contract AgentOps Demo system consisting of 8 MCP servers (TypeScr
 | MCP Servers | TypeScript + @modelcontextprotocol/sdk | 8 servers, 30+ tools |
 | AI Agents | Semantic Kernel JS / Foundry REST API + GPT-4o | 4 agents (Intake, Extraction, Compliance, Approval) |
 | API Gateway | TypeScript + Fastify + ws (WebSocket) | 1 gateway |
-| Dashboard | React 18 + TypeScript + Recharts + Tailwind | 8 views, ~40 components |
+| Dashboard | Static HTML/CSS/JS (vanilla, no build step) | 8 views, served by gateway |
 | Data Store | In-memory JSON with file persistence | 6 JSON files |
 | Prompts | Markdown files in `prompts/` | 4 agent prompts + system instructions |
 | LLM (Judge) | Microsoft Foundry GPT-4o (LLM-as-judge) | Evaluation scoring |
@@ -99,7 +101,7 @@ An end-to-end Contract AgentOps Demo system consisting of 8 MCP servers (TypeScr
 
 ```mermaid
 graph TB
-    subgraph Frontend["React Dashboard (TypeScript)"]
+    subgraph Frontend["Static Dashboard UI (ui/)"]
         direction LR
         V1["Design<br/>Canvas"]
         V2["Build<br/>Console"]
@@ -166,7 +168,7 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant UI as React Dashboard
+    participant UI as Static Dashboard UI
     participant GW as API Gateway
     participant WS as WebSocket
     participant IA as Intake Agent
@@ -231,7 +233,7 @@ graph TB
     ADAPTER -->|simulated| CACHE["data/simulated/*.json"]
 ```
 
-### 2.4 Component Architecture (React Dashboard)
+### 2.4 Component Architecture (Dashboard UI)
 
 ```mermaid
 graph TB
@@ -676,7 +678,7 @@ This is a demo system -- security is simplified but follows best practices where
 | API Keys | Environment variables (`FOUNDRY_API_KEY`) | Never hardcoded, `.env` file excluded from git |
 | Input Validation | JSON schema validation on all endpoints | Prevents malformed requests |
 | Prompt Injection | Input sanitization before LLM calls | Strip control characters, limit input length |
-| CORS | Single origin (localhost:3000) | Gateway allows only the React dashboard origin |
+| CORS | Gateway origin (localhost:8000) | Gateway allows its own origin for the static UI |
 | Data Protection | All data is synthetic | No PII, no real contracts |
 | Secret Management | `.env` file + `.gitignore` | Keys never committed to repository |
 
@@ -871,49 +873,13 @@ contract-agentops-demo/
         compliance-system.md
         approval-system.md
 
-    dashboard/                      # React Dashboard
-        src/
-            App.tsx
-            index.tsx
-            components/
-                NavBar.tsx
-                StatusBar.tsx
-                shared/
-                    AgentCard.tsx
-                    MetricCard.tsx
-                    StatusBadge.tsx
-                    JsonViewer.tsx
-                    ProgressBar.tsx
-            views/
-                DesignCanvas.tsx
-                BuildConsole.tsx
-                DeployDashboard.tsx
-                LiveWorkflow.tsx
-                MonitorPanel.tsx
-                EvaluationLab.tsx
-                DriftDetection.tsx
-                FeedbackLoop.tsx
-            hooks/
-                useWebSocket.ts
-                useApi.ts
-                useContractPipeline.ts
-            context/
-                AppContext.tsx
-            types/
-                contract.ts
-                agent.ts
-                evaluation.ts
-                drift.ts
-                feedback.ts
-            styles/
-                tokens.css
-            utils/
-                formatters.ts
-        public/
-            index.html
-        tailwind.config.js
-        tsconfig.json
-        package.json
+    ui/                             # Static Dashboard UI (vanilla HTML/CSS/JS)
+        index.html                  # Main HTML with 8-view tabs
+        app.js                      # Simulated mode interactions + animations
+        api.js                      # Real-mode API integration + WebSocket
+        styles.css                  # Dashboard styles
+
+    dashboard/                      # [ARCHIVED] React Dashboard (not in runtime)
 
     data/                           # Data Files
         contracts.json
@@ -956,8 +922,7 @@ graph TD
     ENV --> MCP_START["Start 8 MCP Servers<br/>(child processes, ports 9001-9008)"]
     MCP_START --> HEALTH["Health Check<br/>All 8 servers responding"]
     HEALTH --> GW_START["Start API Gateway<br/>(Fastify, port 8000)"]
-    GW_START --> DASH_START["Start React Dashboard<br/>(Vite, port 3000)"]
-    DASH_START --> READY["PASS - Ready<br/>Open http://localhost:3000"]
+    GW_START --> READY["PASS - Ready<br/>UI at http://localhost:8000"]
 
     MCP_START -->|failure| RETRY["Retry max 3<br/>Log error"]
     RETRY -->|still failing| PARTIAL["WARN - Partial Start<br/>Some MCP servers unavailable"]
@@ -967,8 +932,7 @@ graph TD
 
 | Component | Port | Notes |
 |-----------|------|-------|
-| React Dashboard | 3000 | Dev server (Vite) |
-| API Gateway | 8000 | Fastify + WebSocket |
+| Static UI + API Gateway | 8000 | Fastify serves UI at / and API at /api/v1/* |
 | contract-intake-mcp | 9001 | MCP over SSE |
 | contract-extraction-mcp | 9002 | MCP over SSE |
 | contract-compliance-mcp | 9003 | MCP over SSE |
@@ -1076,7 +1040,7 @@ The React StatusBar component shows real-time system health:
 | API Gateway | Structured JSON | stdout + `logs/gateway.log` |
 | MCP Servers | Structured JSON | stdout + `logs/mcp-{name}.log` |
 | Agent Pipeline | Structured JSON (per-step) | stdout + stored in trace_entries |
-| React Dashboard | Browser console | DevTools |
+| Static Dashboard UI | Browser console | DevTools |
 
 ### 12.3 Key Operational Metrics (Displayed in Monitor Panel)
 
