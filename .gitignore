@@ -7,6 +7,13 @@
 
 # Binary artifacts
 *.xlsx
+*.docx
+
+# TypeScript build artifacts
+*.d.ts
+*.d.ts.map
+*.js.map
+*.tsbuildinfo
 
 # Claude temporary files
 tmpclaude-*
