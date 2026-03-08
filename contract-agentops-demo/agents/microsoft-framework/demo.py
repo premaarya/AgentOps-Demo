@@ -26,12 +26,9 @@ logger = logging.getLogger(__name__)
 
 # Import Microsoft Agent Framework components
 try:
-    from agents.microsoft_framework import (
-        AgentFactory,
-        WorkflowFactory,
-        config,
-        initialize_tracing
-    )
+    from .agents import AgentFactory, test_agent_connectivity
+    from .workflows import WorkflowFactory
+    from .config import config, initialize_tracing
 except ImportError as e:
     logger.error("Failed to import Microsoft Agent Framework: %s", e)
     logger.error("Ensure dependencies are installed: pip install -r requirements.txt")
@@ -117,10 +114,9 @@ class ContractProcessingDemo:
         # Test agent connectivity
         logger.info("Testing agent connectivity...")
         try:
-            from agents.microsoft_framework.agents import test_agent_connectivity
             connectivity = await test_agent_connectivity()
             logger.info("Agent connectivity: %s", connectivity)
-        except Exception as e:
+        except (ImportError, RuntimeError, FileNotFoundError) as e:
             logger.warning("Connectivity test failed: %s", e)
         
         # Demo each agent type
@@ -157,7 +153,7 @@ class ContractProcessingDemo:
                 
             except (ValueError, RuntimeError, FileNotFoundError) as e:
                 logger.error("%s agent failed: %s", agent_type, str(e))
-            except Exception as e:
+            except (ValueError, RuntimeError, FileNotFoundError) as e:
                 logger.error("Unexpected error in %s agent: %s", agent_type, str(e))
     
     async def demo_workflow_execution(self):
@@ -196,7 +192,7 @@ class ContractProcessingDemo:
                 
             except (ValueError, RuntimeError) as e:
                 logger.error("Workflow failed for %s: %s", contract_name, str(e))
-            except Exception as e:
+            except (ValueError, RuntimeError) as e:
                 logger.error("Unexpected workflow error for %s: %s", contract_name, str(e))
     
     async def demo_conditional_workflow(self):
@@ -211,10 +207,12 @@ class ContractProcessingDemo:
             
             logger.info("Processing high-value contract with conditional routing...")
             # Note: This would use the conditional workflow once fully implemented
+            # For now, just log the workflow creation for demo purposes
+            logger.info("Conditional workflow created: %s", conditional_workflow.name)
             logger.info("Contract value: $%.2f", high_value_contract['expected_value'])
             logger.info("Regulatory scope: %s", high_value_contract.get('regulatory_scope', False))
             
-        except Exception as e:
+        except (ValueError, RuntimeError, FileNotFoundError) as e:
             logger.error("Conditional workflow demo failed: %s", str(e))
     
     async def save_workflow_results(self, context):
@@ -233,7 +231,7 @@ class ContractProcessingDemo:
             
         except (OSError, IOError) as e:
             logger.error("Failed to save results: %s", str(e))
-        except Exception as e:
+        except (OSError, IOError, ValueError) as e:
             logger.error("Unexpected error saving results: %s", str(e))
     
     async def run_complete_demo(self):
@@ -266,7 +264,7 @@ async def main():
         
     except KeyboardInterrupt:
         logger.info("Demo interrupted by user")
-    except Exception as e:
+    except (RuntimeError, ValueError, ImportError) as e:
         logger.error("Demo failed: %s", str(e))
         raise
 

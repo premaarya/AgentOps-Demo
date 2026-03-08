@@ -174,7 +174,7 @@ class ContractProcessingStep(WorkflowStep):
                     if attempt < self.retry_count - 1:
                         await asyncio.sleep(2 ** attempt)  # Exponential backoff
                 except Exception as e:
-                    last_error = e
+                    last_error = RuntimeError(f"Unexpected error in step {self.step_name}: {str(e)}")
                     logging.error("Unexpected error in step %s: %s", self.step_name, str(e))
                     span.set_attribute("execution.unexpected_error", str(e))
                     break  # Don't retry on unexpected errors
@@ -226,7 +226,7 @@ class ContractProcessingWorkflow:
         self.workflow = SequentialWorkflow(
             name="contract-processing",
             steps=self.steps,
-            config=WorkflowConfig(
+            workflow_config=WorkflowConfig(
                 max_retries=config.max_retries,
                 timeout_seconds=config.timeout_seconds * len(self.steps)
             )

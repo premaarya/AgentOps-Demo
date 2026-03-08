@@ -109,7 +109,7 @@ class DeclarativeContractAgent:
         
         # Initialize agent with framework
         self.agent = Agent(
-            config=self.agent_config,
+            agent_config=self.agent_config,
             client=self.client,
             tools=self.tools,
             system_prompt=self.system_prompt
@@ -330,7 +330,9 @@ if __name__ == "__main__":
         try:
             result = await intake_agent.execute(sample_contract)
             print("Intake Result:", result)
-        except Exception as e:
+        except (ValueError, FileNotFoundError) as e:
             print(f"Execution failed: {e}")
+        except Exception as e:
+            print(f"Unexpected execution error: {e}")
     
     asyncio.run(main())
