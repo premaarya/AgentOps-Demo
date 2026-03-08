@@ -606,5 +606,69 @@
     "action": "approved",
     "reasoning": "Low risk, no flags",
     "timestamp": "2026-03-07T20:47:05.985Z"
+  },
+  {
+    "id": "001ae2d1-6897-4827-adb3-462cca66df17",
+    "contract_id": "contract-c32bac7b",
+    "agent": "intake",
+    "action": "classified",
+    "reasoning": "Classified as NDA with 0.95 confidence",
+    "timestamp": "2026-03-08T02:08:45.962Z"
+  },
+  {
+    "id": "85312d4f-ecb7-497b-b5f6-0b26beb5bc6a",
+    "contract_id": "contract-c32bac7b",
+    "agent": "extraction",
+    "action": "extracted",
+    "reasoning": "Extracted 2 clauses",
+    "timestamp": "2026-03-08T02:08:45.973Z"
+  },
+  {
+    "id": "84aed210-6979-4dc8-9fbb-82af85aa5082",
+    "contract_id": "contract-c32bac7b",
+    "agent": "compliance",
+    "action": "flagged",
+    "reasoning": "Risk: medium, Flags: 0",
+    "timestamp": "2026-03-08T02:08:45.984Z"
+  },
+  {
+    "id": "11aed77a-a67d-4725-862d-69e3556eaa0e",
+    "contract_id": "contract-c32bac7b",
+    "agent": "approval",
+    "action": "approved",
+    "reasoning": "Low risk, no flags",
+    "timestamp": "2026-03-08T02:08:46.001Z"
+  },
+  {
+    "id": "f71e464d-75da-460d-a8d1-4ee67a50205c",
+    "contract_id": "contract-custom42",
+    "agent": "intake",
+    "action": "classified",
+    "reasoning": "Classified as NDA with 0.95 confidence",
+    "timestamp": "2026-03-08T02:08:46.058Z"
+  },
+  {
+    "id": "c1433e76-03f0-452d-a2c1-59a17a6e1d76",
+    "contract_id": "contract-custom42",
+    "agent": "extraction",
+    "action": "extracted",
+    "reasoning": "Extracted 2 clauses",
+    "timestamp": "2026-03-08T02:08:46.072Z"
+  },
+  {
+    "id": "a9b7df03-55ea-491e-a893-a8b33ab150c4",
+    "contract_id": "contract-custom42",
+    "agent": "compliance",
+    "action": "flagged",
+    "reasoning": "Risk: medium, Flags: 0",
+    "timestamp": "2026-03-08T02:08:46.090Z"
+  },
+  {
+    "id": "2faacdd6-b74f-43fc-bbbc-f75f3f12b148",
+    "contract_id": "contract-custom42",
+    "agent": "approval",
+    "action": "approved",
+    "reasoning": "Low risk, no flags",
+    "timestamp": "2026-03-08T02:08:46.108Z"
   }
 ]

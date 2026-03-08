@@ -78,7 +78,7 @@ interface WorkflowState {
 }
 
 interface WorkflowContextType extends WorkflowState {
-	addAgent: (agent: Omit<WorkflowAgent, "id" | "order">) => void;
+	addAgent: (agent: Omit<WorkflowAgent, "id" | "order">) => WorkflowAgent | null;
 	updateAgent: (id: string, updates: Partial<WorkflowAgent>) => void;
 	deleteAgent: (id: string) => void;
 	reorderAgents: (sourceId: string, destinationId: string) => void;
@@ -212,13 +212,21 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
 	});
 
 	// Action creators
-	const addAgent = useCallback((agent: Omit<WorkflowAgent, "id" | "order">) => {
+	const addAgent = useCallback((agent: Omit<WorkflowAgent, "id" | "order">): WorkflowAgent | null => {
 		// Enforce maximum 20 agents
 		if (state.workflow.agents.length >= 20) {
 			console.warn("Maximum 20 agents allowed per workflow");
-			return;
+			return null;
 		}
+		
+		const newAgent: WorkflowAgent = {
+			...agent,
+			id: `agent-${Date.now()}`,
+			order: state.workflow.agents.length,
+		};
+		
 		dispatch({ type: "ADD_AGENT", payload: agent });
+		return newAgent;
 	}, [state.workflow.agents.length]);
 
 	const updateAgent = useCallback((id: string, updates: Partial<WorkflowAgent>) => {

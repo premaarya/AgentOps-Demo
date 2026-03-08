@@ -12,8 +12,17 @@ interface CanvasPositions {
 function InteractiveCanvas() {
 	const { 
 		workflow, 
-		actions,
-		hasUnsavedChanges 
+		hasUnsavedChanges,
+		addAgent,
+		updateAgent,
+		deleteAgent,
+		reorderAgents,
+		updateWorkflowName,
+		updateWorkflowType,
+		saveWorkflow,
+		loadWorkflow,
+		pushToPipeline,
+		resetWorkflow
 	} = useWorkflow();
 	
 	const [showAgentModal, setShowAgentModal] = useState(false);
@@ -38,20 +47,20 @@ function InteractiveCanvas() {
 	}, [workflow.agents]);
 
 	const handleDeleteAgent = useCallback((agentId: string) => {
-		actions.deleteAgent(agentId);
+		deleteAgent(agentId);
 		// Remove position tracking
 		setCanvasPositions(prev => {
 			const next = { ...prev };
 			delete next[agentId];
 			return next;
 		});
-	}, [actions]);
+	}, [deleteAgent]);
 
 	const handleAgentSave = useCallback((agentData: Omit<WorkflowAgent, 'id' | 'order'>) => {
 		if (editingAgent) {
-			actions.updateAgent(editingAgent.id, agentData);
+			updateAgent(editingAgent.id, agentData);
 		} else {
-			const newAgent = actions.addAgent(agentData);
+			const newAgent = addAgent(agentData);
 			// Set initial position for new agents
 			const canvas = canvasRef.current;
 			if (canvas && newAgent) {
@@ -65,7 +74,7 @@ function InteractiveCanvas() {
 		}
 		setShowAgentModal(false);
 		setEditingAgent(null);
-	}, [editingAgent, actions, workflow.agents.length]);
+	}, [editingAgent, addAgent, updateAgent, workflow.agents.length]);
 
 	// Drag and Drop Handlers
 	const handleDragStart = useCallback((e: React.DragEvent, agentId: string) => {
@@ -129,32 +138,32 @@ function InteractiveCanvas() {
 		
 		const draggedId = e.dataTransfer.getData('text/plain');
 		if (draggedId && draggedId !== targetId) {
-			actions.reorderAgent(draggedId, targetId);
+			reorderAgents(draggedId, targetId);
 		}
-	}, [actions]);
+	}, [reorderAgents]);
 
 	// Workflow Actions
 	const handleSaveWorkflow = useCallback(async () => {
 		try {
-			await actions.saveWorkflow();
+			await saveWorkflow();
 		} catch (error) {
 			console.error('Failed to save workflow:', error);
 			// Could show a toast notification here
 		}
-	}, [actions]);
+	}, [saveWorkflow]);
 
 	const handleLoadWorkflow = useCallback(async () => {
 		// In a real app, this would open a workflow selection modal
 		const workflowId = prompt('Enter workflow ID to load:');
 		if (workflowId) {
 			try {
-				await actions.loadWorkflow(workflowId);
+				await loadWorkflow(workflowId);
 			} catch (error) {
 				console.error('Failed to load workflow:', error);
 				// Could show error toast
 			}
 		}
-	}, [actions]);
+	}, [loadWorkflow]);
 
 	const handlePushToPipeline = useCallback(async () => {
 		if (!workflow.name.trim()) {
@@ -173,13 +182,13 @@ function InteractiveCanvas() {
 		
 		if (confirmPush) {
 			try {
-				await actions.pushToPipeline();
+				await pushToPipeline();
 			} catch (error) {
 				console.error('Failed to push workflow:', error);
 				// Could show error toast
 			}
 		}
-	}, [workflow.name, workflow.agents.length, actions]);
+	}, [workflow.name, workflow.agents.length, pushToPipeline]);
 
 	// Get agent position with fallback to grid layout
 	const getAgentPosition = useCallback((agent: WorkflowAgent, index: number) => {
@@ -202,13 +211,13 @@ function InteractiveCanvas() {
 			<WorkflowToolbar
 				workflow={workflow}
 				hasUnsavedChanges={hasUnsavedChanges}
-				onUpdateName={actions.updateName}
-				onUpdateType={actions.updateType}
+			onUpdateName={updateWorkflowName}
+			onUpdateType={updateWorkflowType}
 				onSave={handleSaveWorkflow}
 				onLoad={handleLoadWorkflow}
 				onPushToPipeline={handlePushToPipeline}
 				onAddAgent={handleAddAgent}
-				onReset={actions.reset}
+				onReset={resetWorkflow}
 			/>
 
 			{/* Canvas Area */}
