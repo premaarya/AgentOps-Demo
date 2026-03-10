@@ -135,8 +135,6 @@ function buildAssistantTools(def: AgentDef): AssistantFunctionTool[] {
 const AGENT_API_VERSION = "2025-05-01-preview";
 const DEPLOY_API_VERSION = "2024-10-21";
 const REQUEST_TIMEOUT_MS = 30_000;
-const MODEL_PROVISION_POLL_INTERVAL_MS = 5_000;
-const MODEL_PROVISION_MAX_POLLS = 24; // 2 minutes max wait
 
 // --- Foundry HTTP Client ---
 
@@ -188,7 +186,7 @@ async function preflight(cfg: FoundryDeployConfig): Promise<StageResult> {
 	}
 }
 
-// --- Stage 2: Model Verification + Auto-Provisioning ---
+// --- Stage 2: Model Verification ---
 
 async function verifyModel(cfg: FoundryDeployConfig): Promise<StageResult> {
 	const t0 = Date.now();
@@ -219,9 +217,13 @@ async function verifyModel(cfg: FoundryDeployConfig): Promise<StageResult> {
 			};
 		}
 
-		// Model not found -- attempt auto-provisioning
 		if (res.status === 404) {
-			return await provisionModel(cfg, t0);
+			return {
+				name: "Model Deployment",
+				status: "failed",
+				duration_ms: Date.now() - t0,
+				error: `Model deployment '${cfg.model}' was not found. Provision it through the Azure deployment workflow before running agent registration.`,
+			};
 		}
 
 		return {
@@ -236,89 +238,6 @@ async function verifyModel(cfg: FoundryDeployConfig): Promise<StageResult> {
 			status: "failed",
 			duration_ms: Date.now() - t0,
 			error: err instanceof Error ? err.message : "Model verification failed",
-		};
-	}
-}
-
-async function provisionModel(cfg: FoundryDeployConfig, t0: number): Promise<StageResult> {
-	try {
-		const createRes = await foundryFetch(
-			cfg.endpoint,
-			cfg.apiKey,
-			`/openai/deployments/${encodeURIComponent(cfg.model)}?api-version=${DEPLOY_API_VERSION}`,
-			{
-				method: "PUT",
-				body: JSON.stringify({
-					model: { format: "OpenAI", name: cfg.model, version: "" },
-					sku: { name: "Standard", capacity: 10 },
-				}),
-			},
-		);
-
-		if (!createRes.ok) {
-			const errText = await createRes.text();
-			return {
-				name: "Model Deployment",
-				status: "failed",
-				duration_ms: Date.now() - t0,
-				error: `Auto-provision failed (${createRes.status}): ${errText.slice(0, 200)}`,
-			};
-		}
-
-		// Poll until deployment status is "succeeded"
-		let polls = 0;
-		while (polls < MODEL_PROVISION_MAX_POLLS) {
-			await new Promise((r) => setTimeout(r, MODEL_PROVISION_POLL_INTERVAL_MS));
-			const pollRes = await foundryFetch(
-				cfg.endpoint,
-				cfg.apiKey,
-				`/openai/deployments/${encodeURIComponent(cfg.model)}?api-version=${DEPLOY_API_VERSION}`,
-			);
-			if (pollRes.ok) {
-				const data = (await pollRes.json()) as {
-					id?: string;
-					model?: string;
-					status?: string;
-					sku?: { name?: string; capacity?: number };
-				};
-				if (data.status === "succeeded") {
-					return {
-						name: "Model Deployment",
-						status: "passed",
-						duration_ms: Date.now() - t0,
-						details: {
-							deployment_name: data.id ?? cfg.model,
-							model: data.model ?? cfg.model,
-							status: "succeeded",
-							sku: data.sku?.name ?? "Standard",
-							provisioned: true,
-						},
-					};
-				}
-				if (data.status === "failed" || data.status === "canceled") {
-					return {
-						name: "Model Deployment",
-						status: "failed",
-						duration_ms: Date.now() - t0,
-						error: `Model provisioning ended with status: ${data.status}`,
-					};
-				}
-			}
-			polls++;
-		}
-
-		return {
-			name: "Model Deployment",
-			status: "failed",
-			duration_ms: Date.now() - t0,
-			error: "Model provisioning timed out after 2 minutes",
-		};
-	} catch (err) {
-		return {
-			name: "Model Deployment",
-			status: "failed",
-			duration_ms: Date.now() - t0,
-			error: err instanceof Error ? err.message : "Auto-provision failed",
 		};
 	}
 }

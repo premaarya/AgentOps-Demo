@@ -22,12 +22,14 @@ Azure hosting model:
 The Azure deployment provisions:
 
 - One resource group
+- One Azure OpenAI account
 - One Linux Azure App Service Plan
 - One Linux Azure App Service running `npx tsx start.ts`
 
 The App Service is configured with:
 
 - `DEMO_MODE`
+- `DEPLOY_ADMIN_KEY`
 - `FOUNDRY_ENDPOINT`
 - `FOUNDRY_API_KEY`
 - `FOUNDRY_PROJECT_ENDPOINT`
@@ -55,11 +57,7 @@ Optional but useful:
 For live mode, you also need:
 
 - An Azure subscription
-- An Azure AI Foundry or Azure OpenAI resource
-- A deployed model matching `FOUNDRY_MODEL` such as `gpt-4o`
-- The Foundry endpoint
-- The Foundry project endpoint
-- An API key
+- Permission to create Azure OpenAI resources and model deployments in that subscription
 
 ## Local Setup
 
@@ -121,7 +119,7 @@ Live mode requires Foundry settings. Update `.env`:
 DEMO_MODE=live
 FOUNDRY_API_KEY=<your-api-key>
 FOUNDRY_ENDPOINT=https://<your-resource>.openai.azure.com
-FOUNDRY_PROJECT_ENDPOINT=https://<your-project-endpoint>
+FOUNDRY_PROJECT_ENDPOINT=
 FOUNDRY_MODEL=gpt-4o
 FOUNDRY_MODEL_SWAP=gpt-4o-mini
 GATEWAY_PORT=8000
@@ -135,7 +133,7 @@ Then start the stack:
 npm start
 ```
 
-If `FOUNDRY_API_KEY`, `FOUNDRY_ENDPOINT`, or `FOUNDRY_PROJECT_ENDPOINT` is missing, the gateway will fail fast at startup.
+If `FOUNDRY_API_KEY` or `FOUNDRY_ENDPOINT` is missing, the gateway will fail fast at startup. `FOUNDRY_PROJECT_ENDPOINT` is optional and defaults to `FOUNDRY_ENDPOINT`.
 
 ## Local Validation
 
@@ -186,13 +184,12 @@ Set deployment values:
 
 ```powershell
 azd env set AZURE_LOCATION eastus2
-azd env set FOUNDRY_ENDPOINT https://<your-resource>.openai.azure.com
-azd env set FOUNDRY_API_KEY <your-api-key>
 azd env set FOUNDRY_MODEL gpt-4o
-azd env set DEMO_MODE simulated
+azd env set FOUNDRY_MODEL_VERSION 2024-11-20
+azd env set DEMO_MODE live
 ```
 
-Use `DEMO_MODE=live` when your Foundry endpoint, project endpoint, API key, and model deployment are all available.
+Use `DEMO_MODE=simulated` only when you want the Azure-hosted app to avoid live Foundry calls. In the default live path, the Azure OpenAI account is provisioned through Bicep and the workflow creates the model deployment only when it does not already exist.
 
 ### 3. Provision and Deploy
 
@@ -203,9 +200,10 @@ azd up
 What `azd up` does in this repo:
 
 - Provisions Azure resources from `infra/main.bicep`
+- Creates the Azure OpenAI account used by the gateway
 - Deploys the app to Azure App Service
 - Runs the `postdeploy` hook in `azure.yaml`
-- Calls `POST /api/v1/deploy/pipeline` on the deployed app
+- Calls `POST /api/v1/deploy/pipeline` on the deployed app and fails the deployment if registration does not succeed
 
 ### 4. Get the Deployed URL
 
@@ -232,7 +230,8 @@ curl "$APP_URL/api/v1/deploy/status"
 If you want to manually rerun the deployment registration pipeline:
 
 ```powershell
-curl -Method Post "$APP_URL/api/v1/deploy/pipeline"
+$headers = @{ "x-admin-key" = (azd env get-value DEPLOY_ADMIN_KEY) }
+Invoke-RestMethod -Method Post -Uri "$APP_URL/api/v1/deploy/pipeline" -Headers $headers
 ```
 
 Open the UI:
@@ -243,15 +242,13 @@ Open the UI:
 
 ## Live-Mode Azure Deployment
 
-The Azure infrastructure now wires all required Foundry settings through `azd` into App Service, including `FOUNDRY_PROJECT_ENDPOINT`.
+The Azure infrastructure now provisions the Azure OpenAI account through Bicep and wires the generated endpoint and API key into App Service automatically. `FOUNDRY_PROJECT_ENDPOINT` remains optional and defaults to the same endpoint.
 
 For live mode, set these `azd` environment values before deployment:
 
 ```powershell
-azd env set FOUNDRY_ENDPOINT https://<your-resource>.openai.azure.com
-azd env set FOUNDRY_PROJECT_ENDPOINT https://<your-project-endpoint>
-azd env set FOUNDRY_API_KEY <your-api-key>
 azd env set FOUNDRY_MODEL gpt-4o
+azd env set FOUNDRY_MODEL_VERSION 2024-11-20
 azd env set DEMO_MODE live
 ```
 
@@ -268,6 +265,12 @@ $APP_URL = azd env get-value AZURE_APP_SERVICE_URL
 curl "$APP_URL/api/v1/deploy/mode"
 curl "$APP_URL/api/v1/deploy/status"
 ```
+
+The deploy workflow now follows the same default behavior on GitHub Actions:
+
+- Push to `main` -> auto deploy to `contract-agentops-main`
+- Push tag `v*` -> auto deploy to `contract-agentops-prod`
+- Manual dispatch -> override mode, environment, model, and model version
 
 ## Operational Notes
 

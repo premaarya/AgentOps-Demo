@@ -31,7 +31,7 @@ export const appConfig: AppConfig = {
 	deployAdminKey: envOrDefault("DEPLOY_ADMIN_KEY", ""),
 	foundryApiKey: envOrDefault("FOUNDRY_API_KEY", ""),
 	foundryEndpoint: envOrDefault("FOUNDRY_ENDPOINT", ""),
-	foundryProjectEndpoint: envOrDefault("FOUNDRY_PROJECT_ENDPOINT", ""),
+	foundryProjectEndpoint: envOrDefault("FOUNDRY_PROJECT_ENDPOINT", envOrDefault("FOUNDRY_ENDPOINT", "")),
 	foundryModel: envOrDefault("FOUNDRY_MODEL", "gpt-4o"),
 	foundryModelSwap: envOrDefault("FOUNDRY_MODEL_SWAP", "gpt-4o-mini"),
 	legalReviewEmail: envOrDefault("LEGAL_REVIEW_EMAIL", "legal-review@company.com"),
@@ -54,7 +54,7 @@ export const MCP_SERVERS = [
 
 // Validate required env vars when running in live mode
 if (appConfig.demoMode === "live") {
-	const required = ["FOUNDRY_API_KEY", "FOUNDRY_ENDPOINT", "FOUNDRY_PROJECT_ENDPOINT"] as const;
+	const required = ["FOUNDRY_API_KEY", "FOUNDRY_ENDPOINT"] as const;
 	const missing = required.filter((k) => !process.env[k]);
 	if (missing.length > 0) {
 		throw new Error(

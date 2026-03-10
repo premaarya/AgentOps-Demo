@@ -8,20 +8,14 @@
 		"location": {
 			"value": "${AZURE_LOCATION}"
 		},
-		"foundryEndpoint": {
-			"value": "${FOUNDRY_ENDPOINT}"
-		},
-		"foundryApiKey": {
-			"value": "${FOUNDRY_API_KEY}"
-		},
-		"foundryProjectEndpoint": {
-			"value": "${FOUNDRY_PROJECT_ENDPOINT=${FOUNDRY_ENDPOINT}}"
-		},
 		"foundryModel": {
 			"value": "${FOUNDRY_MODEL=gpt-4o}"
 		},
+		"deployAdminKey": {
+			"value": "${DEPLOY_ADMIN_KEY}"
+		},
 		"demoMode": {
-			"value": "${DEMO_MODE=simulated}"
+			"value": "${DEMO_MODE=live}"
 		}
 	}
 }

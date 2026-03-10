@@ -16,16 +16,45 @@ hooks:
   postdeploy:
     shell: sh
     run: |
+      set -eu
       echo "Deployment complete. Triggering Foundry agent registration pipeline..."
       APP_URL=$(azd env get-value AZURE_APP_SERVICE_URL 2>/dev/null)
-      if [ -n "$APP_URL" ]; then
-        echo "Registering agents via ${APP_URL}/api/v1/deploy/pipeline ..."
-        curl -s -X POST "${APP_URL}/api/v1/deploy/pipeline" \
+      DEMO_MODE=$(azd env get-value DEMO_MODE 2>/dev/null || printf 'simulated')
+      DEPLOY_ADMIN_KEY=$(azd env get-value DEPLOY_ADMIN_KEY 2>/dev/null || true)
+
+      if [ -z "$APP_URL" ]; then
+        echo "ERROR: Could not determine app FQDN from the azd environment."
+        exit 1
+      fi
+
+      echo "Registering agents via ${APP_URL}/api/v1/deploy/pipeline ..."
+
+      if [ "$DEMO_MODE" = "live" ] && [ -z "$DEPLOY_ADMIN_KEY" ]; then
+        echo "ERROR: DEPLOY_ADMIN_KEY is required for live-mode postdeploy registration."
+        exit 1
+      fi
+
+      if [ "$DEMO_MODE" = "live" ]; then
+        HTTP_STATUS=$(curl --silent --show-error -X POST "${APP_URL}/api/v1/deploy/pipeline" \
+          -H "Content-Type: application/json" \
+          -H "x-admin-key: ${DEPLOY_ADMIN_KEY}" \
+          --retry 3 --retry-delay 10 --max-time 120 \
+          -o /tmp/deploy-result.json -w "%{http_code}")
+      else
+        HTTP_STATUS=$(curl --silent --show-error -X POST "${APP_URL}/api/v1/deploy/pipeline" \
           -H "Content-Type: application/json" \
           --retry 3 --retry-delay 10 --max-time 120 \
-          -o /tmp/deploy-result.json -w "\nHTTP Status: %{http_code}\n"
-        cat /tmp/deploy-result.json 2>/dev/null || true
-
-      else
-        echo "WARNING: Could not determine app FQDN. Run agent registration manually."
+          -o /tmp/deploy-result.json -w "%{http_code}")
       fi
+
+      cat /tmp/deploy-result.json 2>/dev/null || true
+
+      case "$HTTP_STATUS" in
+        2??)
+          echo "Postdeploy registration succeeded with HTTP ${HTTP_STATUS}."
+          ;;
+        *)
+          echo "ERROR: Postdeploy registration failed with HTTP ${HTTP_STATUS}."
+          exit 1
+          ;;
+      esac

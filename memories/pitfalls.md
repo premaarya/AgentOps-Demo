@@ -3,3 +3,4 @@
 - 2026-03-07: The legacy static UI under contract-agentops-demo/ui is still served by the gateway and contains stale MCP/tool names.
 - 2026-03-10: Do not rely on workflow.type plus flat agent order to implement parallel/fan-out orchestration. That model cannot represent orchestrator-first, parallel branches, and later merge/sequential stages.
 - 2026-03-10: Do not assume dashboard/ is the active UI just because it exists. App.tsx references missing design/runtime files, so direct feature work there will stall unless the missing surfaces are restored first.
+- 2026-03-10: Do not leave Foundry model creation inside the gateway deployment pipeline when Azure CD is responsible for provisioning. That split ownership can create hidden drift between IaC, workflow behavior, and runtime registration.

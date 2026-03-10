@@ -14,3 +14,5 @@
 - 2026-03-10: Prompt files, few-shot examples, templates, and evaluation/drift artifacts must align with the declarative JSON schemas under contract-agentops-demo/config/schemas/. Do not let prompts teach legacy output shapes that differ from the declared schema.
 - 2026-03-10: DS documentation for the runnable app belongs under contract-agentops-demo/docs/data-science/ and should reflect the latest corpus-matched evaluation and drift evidence rather than legacy demo placeholders.
 - 2026-03-10: In the Python MAF demo scripts, prefer a single specific catch for known recoverable errors and let unexpected exceptions propagate; secondary "unexpected" catch blocks tend to trigger the repo's Python analyzer as overly broad or redundant.
+- 2026-03-10: For Azure-hosted live deployments in contract-agentops-demo, treat `FOUNDRY_PROJECT_ENDPOINT` as optional and fall back to `FOUNDRY_ENDPOINT`. App Service settings should be populated from IaC outputs, not from repo secrets.
+- 2026-03-10: The `azure.yaml` postdeploy hook is a hard gate. In live mode it must send `x-admin-key` using `DEPLOY_ADMIN_KEY` and fail the deployment on any non-2xx registration response.

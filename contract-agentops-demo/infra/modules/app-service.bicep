@@ -18,14 +18,15 @@ param foundryEndpoint string
 @secure()
 param foundryApiKey string
 
-@description('Azure AI Foundry project endpoint URL')
-param foundryProjectEndpoint string
-
 @description('Model deployment name')
 param foundryModel string = 'gpt-4o'
 
 @description('Demo mode: live or simulated')
-param demoMode string = 'simulated'
+param demoMode string = 'live'
+
+@description('Deployment pipeline admin key used by the postdeploy hook in live mode')
+@secure()
+param deployAdminKey string
 
 resource appService 'Microsoft.Web/sites@2023-12-01' = {
   name: name
@@ -41,9 +42,10 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
       healthCheckPath: '/api/v1/health'
       appSettings: [
         { name: 'DEMO_MODE', value: demoMode }
+        { name: 'DEPLOY_ADMIN_KEY', value: deployAdminKey }
         { name: 'FOUNDRY_ENDPOINT', value: foundryEndpoint }
         { name: 'FOUNDRY_API_KEY', value: foundryApiKey }
-        { name: 'FOUNDRY_PROJECT_ENDPOINT', value: foundryProjectEndpoint }
+        { name: 'FOUNDRY_PROJECT_ENDPOINT', value: foundryEndpoint }
         { name: 'FOUNDRY_MODEL', value: foundryModel }
         { name: 'GATEWAY_PORT', value: '8080' }
         { name: 'NODE_ENV', value: 'production' }

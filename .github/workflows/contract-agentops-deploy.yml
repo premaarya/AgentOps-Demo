@@ -1,13 +1,21 @@
 name: Contract AgentOps Deploy
 
 on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+    paths:
+      - ".github/workflows/contract-agentops-deploy.yml"
+      - "contract-agentops-demo/**"
   workflow_dispatch:
     inputs:
       demo_mode:
         description: "Deployment mode"
         required: true
         type: choice
-        default: simulated
+        default: live
         options:
           - simulated
           - live
@@ -26,6 +34,11 @@ on:
         required: true
         type: string
         default: gpt-4o
+      foundry_model_version:
+        description: "Azure OpenAI model version used if the deployment must be created"
+        required: true
+        type: string
+        default: 2024-11-20
 
 permissions:
   contents: read
@@ -80,13 +93,6 @@ jobs:
       AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      FOUNDRY_ENDPOINT: ${{ secrets.FOUNDRY_ENDPOINT }}
-      FOUNDRY_PROJECT_ENDPOINT: ${{ secrets.FOUNDRY_PROJECT_ENDPOINT }}
-      FOUNDRY_API_KEY: ${{ secrets.FOUNDRY_API_KEY }}
-      FOUNDRY_MODEL: ${{ github.event.inputs.foundry_model }}
-      AZD_ENV_NAME: ${{ github.event.inputs.environment_name }}
-      AZURE_LOCATION: ${{ github.event.inputs.azure_location }}
-      DEMO_MODE: ${{ github.event.inputs.demo_mode }}
 
     steps:
       - name: Checkout
@@ -126,18 +132,50 @@ jobs:
             --tenant "$AZURE_TENANT_ID"
           az account set --subscription "$AZURE_SUBSCRIPTION_ID"
 
+      - name: Resolve deployment settings
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          demo_mode="live"
+          environment_name="contract-agentops-main"
+          azure_location="eastus2"
+          foundry_model="gpt-4o"
+          foundry_model_version="2024-11-20"
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            demo_mode="${{ github.event.inputs.demo_mode }}"
+            environment_name="${{ github.event.inputs.environment_name }}"
+            azure_location="${{ github.event.inputs.azure_location }}"
+            foundry_model="${{ github.event.inputs.foundry_model }}"
+            foundry_model_version="${{ github.event.inputs.foundry_model_version }}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            environment_name="contract-agentops-prod"
+          fi
+
+          deploy_admin_key="$(openssl rand -hex 32)"
+
+          {
+            echo "demo_mode=${demo_mode}"
+            echo "environment_name=${environment_name}"
+            echo "azure_location=${azure_location}"
+            echo "foundry_model=${foundry_model}"
+            echo "foundry_model_version=${foundry_model_version}"
+            echo "deploy_admin_key=${deploy_admin_key}"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Prepare azd environment
         shell: bash
         run: |
           set -euo pipefail
           export PATH="$HOME/.azd/bin:$PATH"
-          azd env select "$AZD_ENV_NAME" || azd env new "$AZD_ENV_NAME"
-          azd env set AZURE_LOCATION "$AZURE_LOCATION"
-          azd env set FOUNDRY_ENDPOINT "$FOUNDRY_ENDPOINT"
-          azd env set FOUNDRY_PROJECT_ENDPOINT "$FOUNDRY_PROJECT_ENDPOINT"
-          azd env set FOUNDRY_API_KEY "$FOUNDRY_API_KEY"
-          azd env set FOUNDRY_MODEL "$FOUNDRY_MODEL"
-          azd env set DEMO_MODE "$DEMO_MODE"
+          azd env select "${{ steps.resolve.outputs.environment_name }}" || azd env new "${{ steps.resolve.outputs.environment_name }}"
+          azd env set AZURE_LOCATION "${{ steps.resolve.outputs.azure_location }}"
+          azd env set FOUNDRY_MODEL "${{ steps.resolve.outputs.foundry_model }}"
+          azd env set FOUNDRY_MODEL_VERSION "${{ steps.resolve.outputs.foundry_model_version }}"
+          azd env set DEPLOY_ADMIN_KEY "${{ steps.resolve.outputs.deploy_admin_key }}"
+          azd env set DEMO_MODE "${{ steps.resolve.outputs.demo_mode }}"
 
       - name: Provision infrastructure
         shell: bash
@@ -145,6 +183,37 @@ jobs:
           set -euo pipefail
           export PATH="$HOME/.azd/bin:$PATH"
           azd provision --no-prompt
+
+      - name: Ensure Foundry model deployment exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.azd/bin:$PATH"
+
+          resource_group="$(azd env get-value AZURE_RESOURCE_GROUP)"
+          account_name="$(azd env get-value AZURE_FOUNDRY_ACCOUNT_NAME)"
+          deployment_name="$(azd env get-value AZURE_FOUNDRY_DEPLOYMENT_NAME)"
+          model_name="${{ steps.resolve.outputs.foundry_model }}"
+          model_version="${{ steps.resolve.outputs.foundry_model_version }}"
+
+          if az cognitiveservices account deployment show \
+            --resource-group "$resource_group" \
+            --name "$account_name" \
+            --deployment-name "$deployment_name" >/dev/null 2>&1; then
+            echo "Reusing existing Foundry deployment '$deployment_name' on account '$account_name'."
+            exit 0
+          fi
+
+          echo "Creating Foundry deployment '$deployment_name' on account '$account_name'."
+          az cognitiveservices account deployment create \
+            --resource-group "$resource_group" \
+            --name "$account_name" \
+            --deployment-name "$deployment_name" \
+            --model-format OpenAI \
+            --model-name "$model_name" \
+            --model-version "$model_version" \
+            --sku-name Standard \
+            --sku-capacity 10
 
       - name: Deploy application
         shell: bash
