@@ -27,3 +27,4 @@
 - 2026-03-11: When finishing a stage-first migration, preserve old gateway response fields for compatibility and add the stage-native payload alongside them. The UI can then prefer `contract_stages` while older consumers continue using `agents`.
 - 2026-03-12: For contract-agentops-demo, treat the active user-facing workflow as the 6-stage pre-execution lifecycle: Intake, Drafting, Internal Review, Compliance, Negotiation, Approval. Keep post-approval roles and `extraction` support only as compatibility or future-extension assets, not as the default runtime baseline.
 - 2026-03-12: The repository is now flattened. Do not reintroduce `contract-agentops-demo/` path prefixes in workflows, docs, or scripts; use repository-root paths instead.
+- 2026-03-12: Local startup via start.ts needs a longer MCP health window on Windows cold starts. Keep launcher readiness polling tolerant of npm and tsx startup latency, and fail early only when a child process actually exits.

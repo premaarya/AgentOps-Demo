@@ -1,6 +1,7 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { waitForHealth } from "./startup/health.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SHELL_BINARY = process.platform === "win32" ? (process.env.ComSpec ?? "cmd.exe") : "/bin/sh";
@@ -90,15 +91,24 @@ async function main(): Promise<void> {
 
 	// Wait for MCP health
 	console.log("\nWaiting for MCP servers to be ready...");
-	const healthResults = await Promise.all(MCP_SERVERS.map((s) => waitForHealth(s.port, s.name)));
+	const healthResults = await Promise.all(
+		MCP_SERVERS.map((server, index) =>
+			waitForHealth(server.port, server.name, {
+				process: processes[index],
+			}),
+		),
+	);
 
 	const healthy = healthResults.filter(Boolean).length;
 	console.log(`\n${healthy}/${MCP_SERVERS.length} MCP servers ready`);
 
 	// Start Gateway
 	console.log("\nStarting API Gateway...");
-	startProcess("gateway", resolve(__dirname, "gateway"));
-	await waitForHealth(8000, "gateway", "/api/v1/health");
+	const gatewayProcess = startProcess("gateway", resolve(__dirname, "gateway"));
+	await waitForHealth(8000, "gateway", {
+		path: "/api/v1/health",
+		process: gatewayProcess,
+	});
 
 	console.log("\n=== Ready ===");
 	console.log("UI:        http://localhost:8000");
