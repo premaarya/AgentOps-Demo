@@ -93,7 +93,7 @@ Tests: 51 -> 54 (all pass).
 ### 7. CI `strategy.matrix` with single-element array [LOW]
 
 **File**: `.github/workflows/contract-agentops-ci.yml`
-**Problem**: `strategy.matrix.node-version: [20]` — a matrix with one element adds overhead (matrix fan-out, extra job naming) with no benefit.
+**Problem**: `strategy.matrix.node-version: [20]` ΓÇö a matrix with one element adds overhead (matrix fan-out, extra job naming) with no benefit.
 **Fix**: Removed `strategy.matrix` block, replaced `${{ matrix.node-version }}` with scalar `"20"`.
 
 ---
@@ -118,7 +118,7 @@ Tests: 51 -> 54 (all pass).
 ### [MEDIUM] `load_agent_from_yaml` ignores YAML model config
 
 **File**: `agents/microsoft-framework/agents.py`
-`load_agent_from_yaml()` validates all asset references but calls `AgentFactory.create_agent(agent_id)` which uses global env-var config — not the `model:` section declared in the YAML.
+`load_agent_from_yaml()` validates all asset references but calls `AgentFactory.create_agent(agent_id)` which uses global env-var config ΓÇö not the `model:` section declared in the YAML.
 **Suggested fix**: After `AgentFactory.create_agent(agent_id)`, override the agent's model config with values from `agent_definition.get("model", {})` before returning.
 
 ### [LOW] `ContractExtractionAgent._get_output_schema` returns `ContractMetadata`

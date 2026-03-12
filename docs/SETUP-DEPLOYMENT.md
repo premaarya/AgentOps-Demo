@@ -75,7 +75,7 @@ For live mode, you also need:
 Run all commands from the app root:
 
 ```powershell
-cd "c:\Piyush - Personal\GenAI\Contract Management\contract-agentops-demo"
+cd "c:\Piyush - Personal\GenAI\Contract Management"
 ```
 
 Install dependencies:
@@ -172,7 +172,7 @@ npx tsx tests/test-deployment.ts
 Run all commands from:
 
 ```powershell
-cd "c:\Piyush - Personal\GenAI\Contract Management\contract-agentops-demo"
+cd "c:\Piyush - Personal\GenAI\Contract Management"
 ```
 
 ### 1. Sign in

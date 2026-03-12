@@ -4,7 +4,7 @@
 **Author**: Product Manager Agent
 **Date**: 2026-03-11
 **Stakeholders**: Legal Operations, In-House Counsel, Procurement, Sales Operations, Security and Compliance, IT Platform Team
-**Related Assets**: `contract-agentops-demo/docs/prd/PRD-ContractAgentOps-Demo.md`, `contract-agentops-demo/docs/adr/ADR-ContractAgentOps-Demo.md`, `contract-agentops-demo/docs/specs/SPEC-ContractAgentOps-Demo.md`
+**Related Assets**: `docs/prd/PRD-ContractAgentOps-Demo.md`, `docs/adr/ADR-ContractAgentOps-Demo.md`, `docs/specs/SPEC-ContractAgentOps-Demo.md`
 
 ---
 

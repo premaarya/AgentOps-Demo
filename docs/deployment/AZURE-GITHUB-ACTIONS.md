@@ -8,7 +8,7 @@ This repo now uses GitHub Actions workflows from the repository root for CI and 
 - Root deployment workflow: `.github/workflows/contract-agentops-deploy.yml`
 - Root ACA deployment workflow: `.github/workflows/contract-agentops-deploy-aca.yml`
 
-These workflows are placed at the repository root because GitHub Actions does not execute workflow files stored under `contract-agentops-demo/.github/workflows/`.
+These workflows are placed at the repository root because GitHub Actions only executes workflow files stored under `.github/workflows/`.
 
 ## Required GitHub Secrets
 
@@ -60,18 +60,18 @@ The ACA workflow performs these steps:
 
 1. Validate the app with lint, typecheck, tests, and build.
 2. Authenticate to Azure using the same service principal secrets as the App Service workflow.
-3. Provision ACA base infrastructure from `contract-agentops-demo/infra/container-apps.bicep`.
+3. Provision ACA base infrastructure from `infra/container-apps.bicep`.
 4. Reuse or create the Azure OpenAI model deployment.
 5. Build the application image in Azure Container Registry with `az acr build`.
 6. Create or update the Azure Container App with the new image, managed identity, runtime configuration, and secrets.
-7. Verify health and deployment registration with `contract-agentops-demo/scripts/deploy/verify-deployment.ps1`.
+7. Verify health and deployment registration with `scripts/deploy/verify-deployment.ps1`.
 
 ## Notes
 
 - `FOUNDRY_PROJECT_ENDPOINT` now falls back to `FOUNDRY_ENDPOINT` when not explicitly set.
-- The deployment verification script is at `contract-agentops-demo/scripts/deploy/verify-deployment.ps1`.
+- The deployment verification script is at `scripts/deploy/verify-deployment.ps1`.
 - The post-deploy `azd` hook invokes `POST /api/v1/deploy/pipeline` on the deployed app and now fails the deployment on any non-2xx response.
 - In live mode, the hook automatically supplies `x-admin-key` using the generated `DEPLOY_ADMIN_KEY` environment value.
-- The root CI workflow also enforces lint, typecheck, tests, and build for `contract-agentops-demo` changes.
+- The root CI workflow also enforces lint, typecheck, tests, and build for repository-root app changes.
 - The ACA workflow keeps App Service as the default path and adds a containerized deployment option for scale-out or background-agent scenarios.
 - Both Azure hosting lanes use managed identity for Foundry access instead of injecting `FOUNDRY_API_KEY` into the runtime.

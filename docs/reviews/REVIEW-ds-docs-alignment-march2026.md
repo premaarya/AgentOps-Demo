@@ -4,9 +4,9 @@
 **Reviewer**: Code Reviewer Agent
 **Commit Reviewed**: `2e375c2` (`fix: align ds assets and docs`)
 **Scope**: DS documentation layer gap closure; 23 files changed (+1184 / -756)
-**Related Spec**: [SPEC-ContractAgentOps-Demo.md](../contract-agentops-demo/docs/specs/SPEC-ContractAgentOps-Demo.md)
-**Related PRD**: [PRD-ContractAgentOps-Demo.md](../contract-agentops-demo/docs/prd/PRD-ContractAgentOps-Demo.md)
-**Related ADR**: [ADR-ContractAgentOps-Demo.md](../contract-agentops-demo/docs/adr/ADR-ContractAgentOps-Demo.md)
+**Related Spec**: [SPEC-ContractAgentOps-Demo.md](../specs/SPEC-ContractAgentOps-Demo.md)
+**Related PRD**: [PRD-ContractAgentOps-Demo.md](../prd/PRD-ContractAgentOps-Demo.md)
+**Related ADR**: [ADR-ContractAgentOps-Demo.md](../adr/ADR-ContractAgentOps-Demo.md)
 
 ---
 
@@ -73,7 +73,7 @@ The computed mean is `(4.1 + 4.0 + 4.4) / 3 = 4.17`, rounded to `4.2`. Consisten
 
 ### 4.1 DS Documentation Artifacts
 
-**Location**: `contract-agentops-demo/docs/data-science/`
+**Location**: `docs/data-science/`
 
 All four new files are accurate:
 

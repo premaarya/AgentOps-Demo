@@ -118,7 +118,7 @@ Each agent specializes in a specific aspect of contract analysis, with built-in 
 ```bash
 # Clone repository
 git clone <repository-url>
-cd contract-agentops-demo
+cd <repository-root>
 
 # Install dependencies
 npm install

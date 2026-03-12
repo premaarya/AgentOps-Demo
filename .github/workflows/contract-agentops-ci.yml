@@ -3,18 +3,8 @@ name: Contract AgentOps CI
 on:
   push:
     branches: [main]
-    paths:
-      - "contract-agentops-demo/**"
-      - ".github/workflows/contract-agentops-ci.yml"
-      - ".github/workflows/contract-agentops-deploy.yml"
-      - ".github/workflows/contract-agentops-deploy-aca.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "contract-agentops-demo/**"
-      - ".github/workflows/contract-agentops-ci.yml"
-      - ".github/workflows/contract-agentops-deploy.yml"
-      - ".github/workflows/contract-agentops-deploy-aca.yml"
 
 permissions:
   contents: read
@@ -25,7 +15,7 @@ concurrency:
 
 defaults:
   run:
-    working-directory: contract-agentops-demo
+    working-directory: .
 
 jobs:
   validate:
@@ -41,7 +31,7 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-          cache-dependency-path: contract-agentops-demo/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
