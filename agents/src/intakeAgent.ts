@@ -32,17 +32,20 @@ export async function runIntakeAgent(
 		parsed = JSON.parse(response.content);
 	} catch {
 		parsed = {
-			type: "UNKNOWN",
-			confidence: 0,
+			contract_type: "UNKNOWN",
+			confidence_score: 0,
 			parties: [],
 			metadata: {},
 		};
 	}
 
+	const parsedType = parsed.contract_type ?? parsed.type;
+	const parsedConfidence = parsed.confidence_score ?? parsed.confidence;
+
 	return {
 		contractId,
-		type: (parsed.type as string) ?? "UNKNOWN",
-		confidence: (parsed.confidence as number) ?? 0,
+		type: (parsedType as string) ?? "UNKNOWN",
+		confidence: (parsedConfidence as number) ?? 0,
 		parties: (parsed.parties as string[]) ?? [],
 		metadata: (parsed.metadata as Record<string, string>) ?? {},
 		traceId,
