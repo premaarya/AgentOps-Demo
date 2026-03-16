@@ -242,59 +242,42 @@ const mcpTools = {
 
 window.mcpTools = mcpTools;
 
-const TEST_SCENARIOS = [
-	{
-		id: "nda-standard",
-		name: "Standard NDA",
-		description: "Check that the workflow can classify a low-risk NDA, draft approved clause language, review internally, check compliance, negotiate terms, and complete approval.",
-		inputSummary: "Acme and Beta mutual NDA with confidentiality, parties, effective date, and a standard 2-year term.",
-		expectations: [
-			"Intake should classify a confidentiality-heavy agreement.",
-			"Drafting should assemble a draft package with approved clause language.",
-			"Internal Review should summarize redlines and review comments.",
-			"Compliance should verify terms against company policies.",
-			"Negotiation should assess counterparty positions.",
-			"Approval should complete without mandatory human escalation.",
-		],
-		requiredCapabilities: ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
-		requiresHumanReview: false,
-		prefersParallel: false,
-	},
-	{
-		id: "msa-high-risk",
-		name: "High-Risk MSA",
-		description: "Stress the workflow with a risky master services agreement that should trigger full review, compliance flags, negotiation support, and human approval.",
-		inputSummary: "Enterprise MSA with high liability cap, auto-renewal, cross-border data transfer, and aggressive termination language.",
-		expectations: [
-			"Intake should classify the agreement as high-risk.",
-			"Drafting should recommend fallback language for aggressive clauses.",
-			"Internal Review should flag redlined sections for discussion.",
-			"Compliance should review policy-sensitive clauses.",
-			"Negotiation should recommend fallback positions for counterparty markup.",
-			"Approval should escalate to a human checkpoint.",
-		],
-		requiredCapabilities: ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
-		requiresHumanReview: true,
-		prefersParallel: true,
-	},
-	{
-		id: "amendment-fast-track",
-		name: "Amendment Fast Track",
-		description: "Validate a short amendment path that exercises all 6 stages with a lightweight pass through each.",
-		inputSummary: "Short data-policy amendment updating only retention terms and notice contacts.",
-		expectations: [
-			"Intake should identify this as a small delta review.",
-			"Drafting should assemble the changed clause package.",
-			"Internal Review should confirm minimal redlines.",
-			"Compliance should verify the retention term change.",
-			"Negotiation should confirm no counterparty objections.",
-			"Approval path should remain lightweight.",
-		],
-		requiredCapabilities: ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
-		requiresHumanReview: false,
-		prefersParallel: false,
-	},
-];
+let TEST_SCENARIOS = [];
+
+// Dynamic tool registry loaded from the gateway
+let liveToolRegistry = null;
+
+async function loadTestScenarios() {
+	try {
+		const gatewayUrl = window.GATEWAY_URL || `${location.protocol}//${location.hostname}:8000`;
+		const resp = await fetch(`${gatewayUrl}/api/v1/test-scenarios`, { signal: AbortSignal.timeout(5000) });
+		if (!resp.ok) return;
+		const scenarios = await resp.json();
+		if (Array.isArray(scenarios) && scenarios.length > 0) {
+			TEST_SCENARIOS = scenarios;
+		}
+	} catch (_e) {
+		// API unavailable; keep existing scenarios
+	}
+	populateTestScenarioSelect();
+	updateScenarioDetails();
+}
+
+async function loadToolRegistry() {
+	try {
+		const gatewayUrl = window.GATEWAY_URL || `${location.protocol}//${location.hostname}:8000`;
+		const resp = await fetch(`${gatewayUrl}/api/v1/tools`, { signal: AbortSignal.timeout(5000) });
+		if (!resp.ok) return;
+		liveToolRegistry = await resp.json();
+	} catch (_e) {
+		liveToolRegistry = null;
+	}
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+	loadTestScenarios();
+	loadToolRegistry();
+});
 
 const CAPABILITY_RULES = {
 	intake: {
@@ -456,6 +439,7 @@ function populateTestScenarioSelect() {
 
 function getSelectedScenario() {
 	const select = document.getElementById("test-scenario-select");
+	if (TEST_SCENARIOS.length === 0) return null;
 	const scenarioId = select ? select.value : TEST_SCENARIOS[0].id;
 	return TEST_SCENARIOS.find((scenario) => scenario.id === scenarioId) || TEST_SCENARIOS[0];
 }
@@ -497,14 +481,34 @@ function renderTestWorkflowSummary(workflow) {
 			: "Workflow is structurally ready for scenario testing.";
 
 	const findings = validation.findings.slice(0, 5);
-	checksEl.innerHTML = findings.length > 0
-		? findings.map((item) => `
+	let checksHtml = "";
+
+	if (findings.length > 0) {
+		checksHtml = findings.map((item) => `
 			<div class="test-check-item is-${item.severity}">
 				<span class="badge ${item.severity === "error" ? "badge-fail" : item.severity === "warning" ? "badge-warn" : "badge-pass"}">[${item.severity === "error" ? "FAIL" : item.severity === "warning" ? "WARN" : "PASS"}]</span>
 				<span>${escapeHtmlApp(item.message)}</span>
 			</div>
-		`).join("")
-		: '<div class="test-check-item is-pass"><span class="badge badge-pass">[PASS]</span><span>No blocking design issues were found.</span></div>';
+		`).join("");
+	} else {
+		checksHtml = '<div class="test-check-item is-pass"><span class="badge badge-pass">[PASS]</span><span>No blocking design issues were found.</span></div>';
+	}
+
+	// In real mode, show live MCP server status
+	if (dashboardMode === "real" && liveToolRegistry && Array.isArray(liveToolRegistry)) {
+		checksHtml += liveToolRegistry.map((server) => {
+			const isOnline = server.status === "online";
+			const toolCount = (server.tools || []).length;
+			return `
+				<div class="test-check-item is-${isOnline ? "pass" : "fail"}">
+					<span class="badge ${isOnline ? "badge-pass" : "badge-fail"}">[${isOnline ? "PASS" : "FAIL"}]</span>
+					<span>${escapeHtmlApp(server.name)}: ${isOnline ? "online" : "offline"} (${toolCount} tools)</span>
+				</div>
+			`;
+		}).join("");
+	}
+
+	checksEl.innerHTML = checksHtml;
 }
 
 function updateScenarioDetails() {
@@ -515,6 +519,14 @@ function updateScenarioDetails() {
 	const summaryEl = document.getElementById("test-scenario-summary");
 	const briefEl = document.getElementById("test-scenario-brief");
 	const expectedEl = document.getElementById("test-expected-list");
+
+	if (!scenario) {
+		if (summaryEl) summaryEl.textContent = "Loading test scenarios...";
+		if (briefEl) briefEl.innerHTML = "";
+		if (expectedEl) expectedEl.innerHTML = "";
+		renderTestWorkflowSummary(getActiveWorkflow());
+		return;
+	}
 
 	if (summaryEl) {
 		summaryEl.textContent = scenario.inputSummary;
@@ -539,13 +551,40 @@ function updateScenarioDetails() {
 	renderTestWorkflowSummary(getActiveWorkflow());
 }
 
-function evaluateWorkflowScenario(workflow, scenario) {
+function getToolRegistryStatus(capabilityId) {
+	if (!liveToolRegistry || !Array.isArray(liveToolRegistry)) return null;
+	const rule = CAPABILITY_RULES[capabilityId];
+	if (!rule) return null;
+
+	for (const server of liveToolRegistry) {
+		const serverTools = (server.tools || []).map((t) => t.name);
+		const matchingTools = rule.tools.filter((t) => serverTools.includes(t));
+		if (matchingTools.length > 0) {
+			return {
+				server: server.name,
+				online: server.status === "online",
+				tools: matchingTools,
+			};
+		}
+	}
+	return null;
+}
+
+async function evaluateWorkflowScenario(workflow, scenario) {
 	const validation = getWorkflowValidation(workflow);
 	const effectiveWorkflow = validation.workflow || workflow;
 	const stages = getWorkflowStagesForTesting(effectiveWorkflow);
 	const assertions = [];
 	const totalTools = (effectiveWorkflow.agents || []).reduce((acc, agent) => acc + ((agent.tools || []).length), 0);
 	const hasHuman = (effectiveWorkflow.agents || []).some((agent) => agent.kind === "human");
+	const isReal = dashboardMode === "real";
+
+	// In real mode, refresh tool registry for live status
+	if (isReal) {
+		await loadToolRegistry();
+	}
+
+	const nowTs = formatTestTimestamp();
 
 	assertions.push({
 		status: validation.errors === 0 ? "pass" : "fail",
@@ -553,25 +592,60 @@ function evaluateWorkflowScenario(workflow, scenario) {
 		detail: validation.errors === 0
 			? (validation.warnings > 0 ? `${validation.warnings} warnings remain, but the design is testable.` : "No blocking design issues found.")
 			: `${validation.errors} blocking design issues prevent a clean run.`,
+		timestamp: nowTs,
 	});
 
 	assertions.push({
 		status: totalTools > 0 ? "pass" : "warn",
 		label: "Tool coverage",
 		detail: totalTools > 0 ? `${totalTools} tools are assigned across the workflow.` : "No tools are assigned yet, so this test is only validating structure.",
+		timestamp: nowTs,
 	});
 
-	scenario.requiredCapabilities.forEach((capabilityId) => {
+	for (const capabilityId of (scenario.requiredCapabilities || [])) {
 		const rule = CAPABILITY_RULES[capabilityId];
+		if (!rule) continue;
 		const hasCapability = workflowHasCapability(effectiveWorkflow, capabilityId);
-		assertions.push({
-			status: hasCapability ? "pass" : "fail",
-			label: `${rule.label} coverage`,
-			detail: hasCapability
-				? `Workflow includes an agent or tool capable of ${rule.label.toLowerCase()} work.`
-				: `No agent or tool mapping clearly covers ${rule.label.toLowerCase()} work for this scenario.`,
-		});
-	});
+
+		if (isReal) {
+			const registryStatus = getToolRegistryStatus(capabilityId);
+			if (registryStatus && registryStatus.online) {
+				assertions.push({
+					status: hasCapability ? "pass" : "warn",
+					label: `${rule.label} coverage`,
+					detail: hasCapability
+						? `[Live] ${rule.label} tools online on ${registryStatus.server} (${registryStatus.tools.join(", ")}). Workflow agent matched.`
+						: `[Live] ${rule.label} tools online on ${registryStatus.server}, but no workflow agent maps to this capability.`,
+					timestamp: formatTestTimestamp(),
+				});
+			} else if (registryStatus && !registryStatus.online) {
+				assertions.push({
+					status: "fail",
+					label: `${rule.label} coverage`,
+					detail: `[Live] MCP server ${registryStatus.server} is offline. ${rule.label} tools unavailable.`,
+					timestamp: formatTestTimestamp(),
+				});
+			} else {
+				assertions.push({
+					status: hasCapability ? "warn" : "fail",
+					label: `${rule.label} coverage`,
+					detail: hasCapability
+						? `[Live] No MCP server found for ${rule.label.toLowerCase()} tools, but a workflow agent claims this capability.`
+						: `No agent or tool mapping covers ${rule.label.toLowerCase()} work for this scenario.`,
+					timestamp: formatTestTimestamp(),
+				});
+			}
+		} else {
+			assertions.push({
+				status: hasCapability ? "pass" : "fail",
+				label: `${rule.label} coverage`,
+				detail: hasCapability
+					? `Workflow includes an agent or tool capable of ${rule.label.toLowerCase()} work.`
+					: `No agent or tool mapping clearly covers ${rule.label.toLowerCase()} work for this scenario.`,
+				timestamp: formatTestTimestamp(),
+			});
+		}
+	}
 
 	assertions.push({
 		status: scenario.requiresHumanReview ? (hasHuman ? "pass" : "fail") : (hasHuman ? "warn" : "pass"),
@@ -579,6 +653,7 @@ function evaluateWorkflowScenario(workflow, scenario) {
 		detail: scenario.requiresHumanReview
 			? (hasHuman ? "A human checkpoint exists for escalation-heavy review." : "This scenario expects a human checkpoint but none is defined.")
 			: (hasHuman ? "A human checkpoint exists even though this scenario should usually fast-track." : "Workflow can complete without mandatory human review."),
+		timestamp: formatTestTimestamp(),
 	});
 
 	if (scenario.prefersParallel) {
@@ -587,7 +662,33 @@ function evaluateWorkflowScenario(workflow, scenario) {
 			status: hasParallel ? "pass" : "warn",
 			label: "Parallel review fit",
 			detail: hasParallel ? "Workflow includes a parallel stage that can support specialist review." : "Workflow is fully sequential; it can still run, but high-risk review may be slower.",
+			timestamp: formatTestTimestamp(),
 		});
+	}
+
+	// In real mode, add a gateway connectivity check
+	if (isReal) {
+		try {
+			const gatewayUrl = window.GATEWAY_URL || `${location.protocol}//${location.hostname}:8000`;
+			const healthResp = await fetch(`${gatewayUrl}/api/v1/health`, { signal: AbortSignal.timeout(3000) });
+			const healthData = await healthResp.json();
+			const servers = healthData.servers || {};
+			const onlineCount = Object.values(servers).filter((s) => s === "online").length;
+			const totalCount = Object.keys(servers).length || 8;
+			assertions.push({
+				status: onlineCount === totalCount ? "pass" : onlineCount > 0 ? "warn" : "fail",
+				label: "Gateway connectivity",
+				detail: `[Live] Gateway mode: ${healthData.mode}. MCP servers: ${onlineCount}/${totalCount} online.`,
+				timestamp: formatTestTimestamp(),
+			});
+		} catch (_e) {
+			assertions.push({
+				status: "fail",
+				label: "Gateway connectivity",
+				detail: "[Live] Gateway is unreachable. Real-mode tests cannot verify tool availability.",
+				timestamp: formatTestTimestamp(),
+			});
+		}
 	}
 
 	const passCount = assertions.filter((item) => item.status === "pass").length;
@@ -607,21 +708,28 @@ function evaluateWorkflowScenario(workflow, scenario) {
 	};
 }
 
+function formatTestTimestamp() {
+	const now = new Date();
+	return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) + " " + now.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+}
+
 function renderSingleScenarioResult(result) {
 	const summaryEl = document.getElementById("test-results-summary");
 	const listEl = document.getElementById("test-result-list");
 	const traceEl = document.getElementById("test-stage-trace");
 	if (!summaryEl || !listEl || !traceEl) return;
 
+	const timestamp = formatTestTimestamp();
 	summaryEl.dataset.hasResults = "true";
 	summaryEl.innerHTML = `
 		<span class="badge ${getResultBadgeClass(result.verdict)}">${result.verdict === "fail" ? "Blocked" : result.verdict === "warn" ? "Review" : "Pass"}</span>
 		<span>${escapeHtmlApp(result.scenario.name)}: ${result.passCount} passed • ${result.warnCount} warnings • ${result.failCount} failed</span>
+		<span style="margin-left:auto;font-size:12px;color:var(--color-text-tertiary)">${timestamp}</span>
 	`;
 
 	listEl.innerHTML = result.assertions.map((assertion) => `
 		<div class="test-result-item is-${assertion.status}">
-			<div class="test-result-label"><span class="badge ${getResultBadgeClass(assertion.status)}">[${assertion.status === "fail" ? "FAIL" : assertion.status === "warn" ? "WARN" : "PASS"}]</span><span>${escapeHtmlApp(assertion.label)}</span></div>
+			<div class="test-result-label"><span class="badge ${getResultBadgeClass(assertion.status)}">[${assertion.status === "fail" ? "FAIL" : assertion.status === "warn" ? "WARN" : "PASS"}]</span><span>${escapeHtmlApp(assertion.label)}</span><span style="margin-left:auto;font-size:11px;color:var(--color-text-tertiary)">${escapeHtmlApp(assertion.timestamp || "")}</span></div>
 			<div class="test-result-detail">${escapeHtmlApp(assertion.detail)}</div>
 		</div>
 	`).join("");
@@ -653,41 +761,51 @@ function renderAggregateScenarioResults(results) {
 	const failCount = results.filter((item) => item.verdict === "fail").length;
 	const overallStatus = failCount > 0 ? "fail" : warnCount > 0 ? "warn" : "pass";
 
+	const timestamp = formatTestTimestamp();
 	summaryEl.dataset.hasResults = "true";
 	summaryEl.innerHTML = `
 		<span class="badge ${getResultBadgeClass(overallStatus)}">${overallStatus === "fail" ? "Needs fixes" : overallStatus === "warn" ? "Partial" : "Pass"}</span>
 		<span>${passCount} scenarios passed • ${warnCount} need review • ${failCount} failed</span>
+		<span style="margin-left:auto;font-size:12px;color:var(--color-text-tertiary)">${timestamp}</span>
 	`;
 
-	listEl.innerHTML = results.map((result) => `
+	listEl.innerHTML = results.map((result) => {
+		const resultTs = result.assertions.length > 0 ? result.assertions[result.assertions.length - 1].timestamp : "";
+		return `
 		<div class="test-result-item is-${result.verdict}">
-			<div class="test-result-label"><span class="badge ${getResultBadgeClass(result.verdict)}">${escapeHtmlApp(result.scenario.name)}</span><span>${result.passCount} passed • ${result.warnCount} warnings • ${result.failCount} failed</span></div>
+			<div class="test-result-label"><span class="badge ${getResultBadgeClass(result.verdict)}">${escapeHtmlApp(result.scenario.name)}</span><span>${result.passCount} passed • ${result.warnCount} warnings • ${result.failCount} failed</span><span style="margin-left:auto;font-size:11px;color:var(--color-text-tertiary)">${escapeHtmlApp(resultTs || "")}</span></div>
 			<div class="test-result-detail">${escapeHtmlApp(result.scenario.description)}</div>
 		</div>
-	`).join("");
+	`;
+	}).join("");
 
 	traceEl.innerHTML = '<div class="test-result-detail">Run an individual scenario to inspect the stage-by-stage trace.</div>';
 }
 
-function runSelectedTest() {
+async function runSelectedTest() {
 	const workflow = getActiveWorkflow();
 	const scenario = getSelectedScenario();
-	if (!workflow || !workflow.agents || workflow.agents.length === 0) {
+	if (!workflow || !workflow.agents || workflow.agents.length === 0 || !scenario) {
 		clearTestResults();
 		return;
 	}
 
-	renderSingleScenarioResult(evaluateWorkflowScenario(workflow, scenario));
+	const result = await evaluateWorkflowScenario(workflow, scenario);
+	renderSingleScenarioResult(result);
 }
 
-function runAllTests() {
+async function runAllTests() {
 	const workflow = getActiveWorkflow();
 	if (!workflow || !workflow.agents || workflow.agents.length === 0) {
 		clearTestResults();
 		return;
 	}
 
-	renderAggregateScenarioResults(TEST_SCENARIOS.map((scenario) => evaluateWorkflowScenario(workflow, scenario)));
+	const results = [];
+	for (const scenario of TEST_SCENARIOS) {
+		results.push(await evaluateWorkflowScenario(workflow, scenario));
+	}
+	renderAggregateScenarioResults(results);
 }
 
 function clearTestResults() {
@@ -713,8 +831,8 @@ function clearTestResults() {
 }
 
 function syncTestTab() {
-	populateTestScenarioSelect();
-	updateScenarioDetails();
+	loadTestScenarios();
+	loadToolRegistry();
 	updateTestModeNote();
 	if (!document.getElementById("test-results-summary")?.dataset.hasResults) {
 		clearTestResults();

@@ -13,6 +13,7 @@ import { evaluationRoutes } from "./routes/evaluations.js";
 import { feedbackRoutes } from "./routes/feedback.js";
 import { promptRoutes } from "./routes/prompts.js";
 import { sampleContractRoutes } from "./routes/sampleContracts.js";
+import { testScenarioRoutes } from "./routes/testScenarios.js";
 import { toolRoutes } from "./routes/tools.js";
 import { workflowRoutes } from "./routes/workflows.js";
 import { initWorkflowRegistry } from "./services/workflowRegistry.js";
@@ -89,6 +90,7 @@ export async function startGateway(): Promise<void> {
 	await app.register(deployRoutes);
 	await app.register(promptRoutes);
 	await app.register(sampleContractRoutes);
+	await app.register(testScenarioRoutes);
 	await app.register(workflowRoutes);
 
 	await app.listen({ port: appConfig.gatewayPort, host: "0.0.0.0" });
