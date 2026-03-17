@@ -96,12 +96,14 @@ export interface ReviewEntry {
 
 // --- Audit ---
 
-export type AuditAgent = "intake" | "extraction" | "compliance" | "approval" | "human";
+export type AuditAgent = "intake" | "extraction" | "review" | "compliance" | "negotiation" | "approval" | "human";
 
 export type AuditAction =
 	| "classified"
 	| "extracted"
+	| "reviewed"
 	| "flagged"
+	| "negotiated"
 	| "escalated"
 	| "approved"
 	| "rejected"
@@ -214,7 +216,9 @@ export type PipelineStage =
 	| "processing_started"
 	| "intake_complete"
 	| "extraction_complete"
+	| "review_complete"
 	| "compliance_complete"
+	| "negotiation_complete"
 	| "awaiting_human_review"
 	| "approved"
 	| "rejected"

@@ -99,7 +99,7 @@ function updatePipelineStatus(workflow) {
 }
 
 function refreshActiveWorkflowFromGateway() {
-	const gatewayUrl = window.GATEWAY_URL || "http://localhost:8000";
+	const gatewayUrl = window.GATEWAY_URL || "";
 	return fetch(`${gatewayUrl}/api/v1/workflows/active/package`, { signal: AbortSignal.timeout(4000) })
 		.then((res) => {
 			if (!res.ok) {
@@ -230,58 +230,54 @@ function getActiveWorkflow() {
 }
 
 const mcpTools = {
-	"contract-extraction-mcp": ["extract_clauses", "identify_parties", "extract_dates_values"],
 	"contract-intake-mcp": ["upload_contract", "classify_document", "extract_metadata"],
+	"contract-extraction-mcp": ["extract_clauses", "identify_parties", "extract_dates_values"],
 	"contract-compliance-mcp": ["check_policy", "flag_risk", "get_policy_rules"],
 	"contract-workflow-mcp": ["route_approval", "escalate_to_human", "notify_stakeholder"],
+	"contract-audit-mcp": ["get_audit_log", "create_audit_entry"],
+	"contract-eval-mcp": ["run_evaluation", "get_baseline"],
+	"contract-drift-mcp": ["detect_drift", "model_swap_analysis"],
+	"contract-feedback-mcp": ["submit_feedback", "optimize_feedback"],
 };
 
 window.mcpTools = mcpTools;
 
-const TEST_SCENARIOS = [
-	{
-		id: "nda-standard",
-		name: "Standard NDA",
-		description: "Check that the workflow can classify a low-risk NDA, extract key clauses, and complete without unnecessary escalation.",
-		inputSummary: "Acme and Beta mutual NDA with confidentiality, parties, effective date, and a standard 2-year term.",
-		expectations: [
-			"Intake should classify a confidentiality-heavy agreement.",
-			"Extraction should capture parties, dates, and confidentiality clauses.",
-			"Workflow should complete without mandatory human approval.",
-		],
-		requiredCapabilities: ["intake", "extraction", "approval"],
-		requiresHumanReview: false,
-		prefersParallel: false,
-	},
-	{
-		id: "msa-high-risk",
-		name: "High-Risk MSA",
-		description: "Stress the workflow with a risky master services agreement that should trigger compliance review and human approval.",
-		inputSummary: "Enterprise MSA with high liability cap, auto-renewal, cross-border data transfer, and aggressive termination language.",
-		expectations: [
-			"Compliance should review policy-sensitive clauses.",
-			"Approval should escalate to a human checkpoint.",
-			"Parallel review is beneficial when multiple specialists are involved.",
-		],
-		requiredCapabilities: ["intake", "extraction", "compliance", "approval"],
-		requiresHumanReview: true,
-		prefersParallel: true,
-	},
-	{
-		id: "amendment-fast-track",
-		name: "Amendment Fast Track",
-		description: "Validate a short amendment path where extraction and approval can be lightweight but still complete.",
-		inputSummary: "Short data-policy amendment updating only retention terms and notice contacts.",
-		expectations: [
-			"Workflow should identify this as a small delta review.",
-			"Extraction should capture the changed clauses quickly.",
-			"Approval path should remain lightweight.",
-		],
-		requiredCapabilities: ["intake", "extraction", "approval"],
-		requiresHumanReview: false,
-		prefersParallel: false,
-	},
-];
+let TEST_SCENARIOS = [];
+
+// Dynamic tool registry loaded from the gateway
+let liveToolRegistry = null;
+
+async function loadTestScenarios() {
+	try {
+		const gatewayUrl = window.GATEWAY_URL || "";
+		const resp = await fetch(`${gatewayUrl}/api/v1/test-scenarios`, { signal: AbortSignal.timeout(5000) });
+		if (!resp.ok) return;
+		const scenarios = await resp.json();
+		if (Array.isArray(scenarios) && scenarios.length > 0) {
+			TEST_SCENARIOS = scenarios;
+		}
+	} catch (_e) {
+		// API unavailable; keep existing scenarios
+	}
+	populateTestScenarioSelect();
+	updateScenarioDetails();
+}
+
+async function loadToolRegistry() {
+	try {
+		const gatewayUrl = window.GATEWAY_URL || "";
+		const resp = await fetch(`${gatewayUrl}/api/v1/tools`, { signal: AbortSignal.timeout(5000) });
+		if (!resp.ok) return;
+		liveToolRegistry = await resp.json();
+	} catch (_e) {
+		liveToolRegistry = null;
+	}
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+	loadTestScenarios();
+	loadToolRegistry();
+});
 
 const CAPABILITY_RULES = {
 	intake: {
@@ -289,15 +285,25 @@ const CAPABILITY_RULES = {
 		keywords: ["intake", "classify", "metadata", "upload", "document"],
 		tools: ["upload_contract", "classify_document", "extract_metadata"],
 	},
-	extraction: {
-		label: "Extraction",
-		keywords: ["extract", "clause", "party", "date", "metadata"],
+	drafting: {
+		label: "Drafting",
+		keywords: ["draft", "authoring", "clause language", "fallback language", "package"],
 		tools: ["extract_clauses", "identify_parties", "extract_dates_values"],
+	},
+	review: {
+		label: "Internal Review",
+		keywords: ["internal review", "redline", "review comment", "decision point", "audit"],
+		tools: ["get_audit_log", "create_audit_entry"],
 	},
 	compliance: {
 		label: "Compliance",
-		keywords: ["compliance", "policy", "risk", "flag", "review"],
+		keywords: ["compliance", "policy", "risk", "flag"],
 		tools: ["check_policy", "flag_risk", "get_policy_rules"],
+	},
+	negotiation: {
+		label: "Negotiation",
+		keywords: ["negotiat", "counterparty", "markup", "fallback", "position"],
+		tools: ["route_approval", "notify_stakeholder"],
 	},
 	approval: {
 		label: "Approval",
@@ -433,6 +439,7 @@ function populateTestScenarioSelect() {
 
 function getSelectedScenario() {
 	const select = document.getElementById("test-scenario-select");
+	if (TEST_SCENARIOS.length === 0) return null;
 	const scenarioId = select ? select.value : TEST_SCENARIOS[0].id;
 	return TEST_SCENARIOS.find((scenario) => scenario.id === scenarioId) || TEST_SCENARIOS[0];
 }
@@ -474,14 +481,34 @@ function renderTestWorkflowSummary(workflow) {
 			: "Workflow is structurally ready for scenario testing.";
 
 	const findings = validation.findings.slice(0, 5);
-	checksEl.innerHTML = findings.length > 0
-		? findings.map((item) => `
+	let checksHtml = "";
+
+	if (findings.length > 0) {
+		checksHtml = findings.map((item) => `
 			<div class="test-check-item is-${item.severity}">
 				<span class="badge ${item.severity === "error" ? "badge-fail" : item.severity === "warning" ? "badge-warn" : "badge-pass"}">[${item.severity === "error" ? "FAIL" : item.severity === "warning" ? "WARN" : "PASS"}]</span>
 				<span>${escapeHtmlApp(item.message)}</span>
 			</div>
-		`).join("")
-		: '<div class="test-check-item is-pass"><span class="badge badge-pass">[PASS]</span><span>No blocking design issues were found.</span></div>';
+		`).join("");
+	} else {
+		checksHtml = '<div class="test-check-item is-pass"><span class="badge badge-pass">[PASS]</span><span>No blocking design issues were found.</span></div>';
+	}
+
+	// In real mode, show live MCP server status
+	if (dashboardMode === "real" && liveToolRegistry && Array.isArray(liveToolRegistry)) {
+		checksHtml += liveToolRegistry.map((server) => {
+			const isOnline = server.status === "online";
+			const toolCount = (server.tools || []).length;
+			return `
+				<div class="test-check-item is-${isOnline ? "pass" : "fail"}">
+					<span class="badge ${isOnline ? "badge-pass" : "badge-fail"}">[${isOnline ? "PASS" : "FAIL"}]</span>
+					<span>${escapeHtmlApp(server.name)}: ${isOnline ? "online" : "offline"} (${toolCount} tools)</span>
+				</div>
+			`;
+		}).join("");
+	}
+
+	checksEl.innerHTML = checksHtml;
 }
 
 function updateScenarioDetails() {
@@ -492,6 +519,14 @@ function updateScenarioDetails() {
 	const summaryEl = document.getElementById("test-scenario-summary");
 	const briefEl = document.getElementById("test-scenario-brief");
 	const expectedEl = document.getElementById("test-expected-list");
+
+	if (!scenario) {
+		if (summaryEl) summaryEl.textContent = "Loading test scenarios...";
+		if (briefEl) briefEl.innerHTML = "";
+		if (expectedEl) expectedEl.innerHTML = "";
+		renderTestWorkflowSummary(getActiveWorkflow());
+		return;
+	}
 
 	if (summaryEl) {
 		summaryEl.textContent = scenario.inputSummary;
@@ -516,13 +551,40 @@ function updateScenarioDetails() {
 	renderTestWorkflowSummary(getActiveWorkflow());
 }
 
-function evaluateWorkflowScenario(workflow, scenario) {
+function getToolRegistryStatus(capabilityId) {
+	if (!liveToolRegistry || !Array.isArray(liveToolRegistry)) return null;
+	const rule = CAPABILITY_RULES[capabilityId];
+	if (!rule) return null;
+
+	for (const server of liveToolRegistry) {
+		const serverTools = (server.tools || []).map((t) => t.name);
+		const matchingTools = rule.tools.filter((t) => serverTools.includes(t));
+		if (matchingTools.length > 0) {
+			return {
+				server: server.name,
+				online: server.status === "online",
+				tools: matchingTools,
+			};
+		}
+	}
+	return null;
+}
+
+async function evaluateWorkflowScenario(workflow, scenario) {
 	const validation = getWorkflowValidation(workflow);
 	const effectiveWorkflow = validation.workflow || workflow;
 	const stages = getWorkflowStagesForTesting(effectiveWorkflow);
 	const assertions = [];
 	const totalTools = (effectiveWorkflow.agents || []).reduce((acc, agent) => acc + ((agent.tools || []).length), 0);
 	const hasHuman = (effectiveWorkflow.agents || []).some((agent) => agent.kind === "human");
+	const isReal = dashboardMode === "real";
+
+	// In real mode, refresh tool registry for live status
+	if (isReal) {
+		await loadToolRegistry();
+	}
+
+	const nowTs = formatTestTimestamp();
 
 	assertions.push({
 		status: validation.errors === 0 ? "pass" : "fail",
@@ -530,25 +592,60 @@ function evaluateWorkflowScenario(workflow, scenario) {
 		detail: validation.errors === 0
 			? (validation.warnings > 0 ? `${validation.warnings} warnings remain, but the design is testable.` : "No blocking design issues found.")
 			: `${validation.errors} blocking design issues prevent a clean run.`,
+		timestamp: nowTs,
 	});
 
 	assertions.push({
 		status: totalTools > 0 ? "pass" : "warn",
 		label: "Tool coverage",
 		detail: totalTools > 0 ? `${totalTools} tools are assigned across the workflow.` : "No tools are assigned yet, so this test is only validating structure.",
+		timestamp: nowTs,
 	});
 
-	scenario.requiredCapabilities.forEach((capabilityId) => {
+	for (const capabilityId of (scenario.requiredCapabilities || [])) {
 		const rule = CAPABILITY_RULES[capabilityId];
+		if (!rule) continue;
 		const hasCapability = workflowHasCapability(effectiveWorkflow, capabilityId);
-		assertions.push({
-			status: hasCapability ? "pass" : "fail",
-			label: `${rule.label} coverage`,
-			detail: hasCapability
-				? `Workflow includes an agent or tool capable of ${rule.label.toLowerCase()} work.`
-				: `No agent or tool mapping clearly covers ${rule.label.toLowerCase()} work for this scenario.`,
-		});
-	});
+
+		if (isReal) {
+			const registryStatus = getToolRegistryStatus(capabilityId);
+			if (registryStatus && registryStatus.online) {
+				assertions.push({
+					status: hasCapability ? "pass" : "warn",
+					label: `${rule.label} coverage`,
+					detail: hasCapability
+						? `[Live] ${rule.label} tools online on ${registryStatus.server} (${registryStatus.tools.join(", ")}). Workflow agent matched.`
+						: `[Live] ${rule.label} tools online on ${registryStatus.server}, but no workflow agent maps to this capability.`,
+					timestamp: formatTestTimestamp(),
+				});
+			} else if (registryStatus && !registryStatus.online) {
+				assertions.push({
+					status: "fail",
+					label: `${rule.label} coverage`,
+					detail: `[Live] MCP server ${registryStatus.server} is offline. ${rule.label} tools unavailable.`,
+					timestamp: formatTestTimestamp(),
+				});
+			} else {
+				assertions.push({
+					status: hasCapability ? "warn" : "fail",
+					label: `${rule.label} coverage`,
+					detail: hasCapability
+						? `[Live] No MCP server found for ${rule.label.toLowerCase()} tools, but a workflow agent claims this capability.`
+						: `No agent or tool mapping covers ${rule.label.toLowerCase()} work for this scenario.`,
+					timestamp: formatTestTimestamp(),
+				});
+			}
+		} else {
+			assertions.push({
+				status: hasCapability ? "pass" : "fail",
+				label: `${rule.label} coverage`,
+				detail: hasCapability
+					? `Workflow includes an agent or tool capable of ${rule.label.toLowerCase()} work.`
+					: `No agent or tool mapping clearly covers ${rule.label.toLowerCase()} work for this scenario.`,
+				timestamp: formatTestTimestamp(),
+			});
+		}
+	}
 
 	assertions.push({
 		status: scenario.requiresHumanReview ? (hasHuman ? "pass" : "fail") : (hasHuman ? "warn" : "pass"),
@@ -556,6 +653,7 @@ function evaluateWorkflowScenario(workflow, scenario) {
 		detail: scenario.requiresHumanReview
 			? (hasHuman ? "A human checkpoint exists for escalation-heavy review." : "This scenario expects a human checkpoint but none is defined.")
 			: (hasHuman ? "A human checkpoint exists even though this scenario should usually fast-track." : "Workflow can complete without mandatory human review."),
+		timestamp: formatTestTimestamp(),
 	});
 
 	if (scenario.prefersParallel) {
@@ -564,7 +662,33 @@ function evaluateWorkflowScenario(workflow, scenario) {
 			status: hasParallel ? "pass" : "warn",
 			label: "Parallel review fit",
 			detail: hasParallel ? "Workflow includes a parallel stage that can support specialist review." : "Workflow is fully sequential; it can still run, but high-risk review may be slower.",
+			timestamp: formatTestTimestamp(),
 		});
+	}
+
+	// In real mode, add a gateway connectivity check
+	if (isReal) {
+		try {
+			const gatewayUrl = window.GATEWAY_URL || "";
+			const healthResp = await fetch(`${gatewayUrl}/api/v1/health`, { signal: AbortSignal.timeout(3000) });
+			const healthData = await healthResp.json();
+			const servers = healthData.servers || {};
+			const onlineCount = Object.values(servers).filter((s) => s === "online").length;
+			const totalCount = Object.keys(servers).length || 8;
+			assertions.push({
+				status: onlineCount === totalCount ? "pass" : onlineCount > 0 ? "warn" : "fail",
+				label: "Gateway connectivity",
+				detail: `[Live] Gateway mode: ${healthData.mode}. MCP servers: ${onlineCount}/${totalCount} online.`,
+				timestamp: formatTestTimestamp(),
+			});
+		} catch (_e) {
+			assertions.push({
+				status: "fail",
+				label: "Gateway connectivity",
+				detail: "[Live] Gateway is unreachable. Real-mode tests cannot verify tool availability.",
+				timestamp: formatTestTimestamp(),
+			});
+		}
 	}
 
 	const passCount = assertions.filter((item) => item.status === "pass").length;
@@ -584,21 +708,28 @@ function evaluateWorkflowScenario(workflow, scenario) {
 	};
 }
 
+function formatTestTimestamp() {
+	const now = new Date();
+	return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) + " " + now.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+}
+
 function renderSingleScenarioResult(result) {
 	const summaryEl = document.getElementById("test-results-summary");
 	const listEl = document.getElementById("test-result-list");
 	const traceEl = document.getElementById("test-stage-trace");
 	if (!summaryEl || !listEl || !traceEl) return;
 
+	const timestamp = formatTestTimestamp();
 	summaryEl.dataset.hasResults = "true";
 	summaryEl.innerHTML = `
 		<span class="badge ${getResultBadgeClass(result.verdict)}">${result.verdict === "fail" ? "Blocked" : result.verdict === "warn" ? "Review" : "Pass"}</span>
 		<span>${escapeHtmlApp(result.scenario.name)}: ${result.passCount} passed • ${result.warnCount} warnings • ${result.failCount} failed</span>
+		<span style="margin-left:auto;font-size:12px;color:var(--color-text-tertiary)">${timestamp}</span>
 	`;
 
 	listEl.innerHTML = result.assertions.map((assertion) => `
 		<div class="test-result-item is-${assertion.status}">
-			<div class="test-result-label"><span class="badge ${getResultBadgeClass(assertion.status)}">[${assertion.status === "fail" ? "FAIL" : assertion.status === "warn" ? "WARN" : "PASS"}]</span><span>${escapeHtmlApp(assertion.label)}</span></div>
+			<div class="test-result-label"><span class="badge ${getResultBadgeClass(assertion.status)}">[${assertion.status === "fail" ? "FAIL" : assertion.status === "warn" ? "WARN" : "PASS"}]</span><span>${escapeHtmlApp(assertion.label)}</span><span style="margin-left:auto;font-size:11px;color:var(--color-text-tertiary)">${escapeHtmlApp(assertion.timestamp || "")}</span></div>
 			<div class="test-result-detail">${escapeHtmlApp(assertion.detail)}</div>
 		</div>
 	`).join("");
@@ -630,41 +761,51 @@ function renderAggregateScenarioResults(results) {
 	const failCount = results.filter((item) => item.verdict === "fail").length;
 	const overallStatus = failCount > 0 ? "fail" : warnCount > 0 ? "warn" : "pass";
 
+	const timestamp = formatTestTimestamp();
 	summaryEl.dataset.hasResults = "true";
 	summaryEl.innerHTML = `
 		<span class="badge ${getResultBadgeClass(overallStatus)}">${overallStatus === "fail" ? "Needs fixes" : overallStatus === "warn" ? "Partial" : "Pass"}</span>
 		<span>${passCount} scenarios passed • ${warnCount} need review • ${failCount} failed</span>
+		<span style="margin-left:auto;font-size:12px;color:var(--color-text-tertiary)">${timestamp}</span>
 	`;
 
-	listEl.innerHTML = results.map((result) => `
+	listEl.innerHTML = results.map((result) => {
+		const resultTs = result.assertions.length > 0 ? result.assertions[result.assertions.length - 1].timestamp : "";
+		return `
 		<div class="test-result-item is-${result.verdict}">
-			<div class="test-result-label"><span class="badge ${getResultBadgeClass(result.verdict)}">${escapeHtmlApp(result.scenario.name)}</span><span>${result.passCount} passed • ${result.warnCount} warnings • ${result.failCount} failed</span></div>
+			<div class="test-result-label"><span class="badge ${getResultBadgeClass(result.verdict)}">${escapeHtmlApp(result.scenario.name)}</span><span>${result.passCount} passed • ${result.warnCount} warnings • ${result.failCount} failed</span><span style="margin-left:auto;font-size:11px;color:var(--color-text-tertiary)">${escapeHtmlApp(resultTs || "")}</span></div>
 			<div class="test-result-detail">${escapeHtmlApp(result.scenario.description)}</div>
 		</div>
-	`).join("");
+	`;
+	}).join("");
 
 	traceEl.innerHTML = '<div class="test-result-detail">Run an individual scenario to inspect the stage-by-stage trace.</div>';
 }
 
-function runSelectedTest() {
+async function runSelectedTest() {
 	const workflow = getActiveWorkflow();
 	const scenario = getSelectedScenario();
-	if (!workflow || !workflow.agents || workflow.agents.length === 0) {
+	if (!workflow || !workflow.agents || workflow.agents.length === 0 || !scenario) {
 		clearTestResults();
 		return;
 	}
 
-	renderSingleScenarioResult(evaluateWorkflowScenario(workflow, scenario));
+	const result = await evaluateWorkflowScenario(workflow, scenario);
+	renderSingleScenarioResult(result);
 }
 
-function runAllTests() {
+async function runAllTests() {
 	const workflow = getActiveWorkflow();
 	if (!workflow || !workflow.agents || workflow.agents.length === 0) {
 		clearTestResults();
 		return;
 	}
 
-	renderAggregateScenarioResults(TEST_SCENARIOS.map((scenario) => evaluateWorkflowScenario(workflow, scenario)));
+	const results = [];
+	for (const scenario of TEST_SCENARIOS) {
+		results.push(await evaluateWorkflowScenario(workflow, scenario));
+	}
+	renderAggregateScenarioResults(results);
 }
 
 function clearTestResults() {
@@ -690,8 +831,8 @@ function clearTestResults() {
 }
 
 function syncTestTab() {
-	populateTestScenarioSelect();
-	updateScenarioDetails();
+	loadTestScenarios();
+	loadToolRegistry();
 	updateTestModeNote();
 	if (!document.getElementById("test-results-summary")?.dataset.hasResults) {
 		clearTestResults();
@@ -729,6 +870,77 @@ function syncDeployTab() {
 	}
 }
 
+// --- Load Sample Contracts into dropdown ---
+let selectedContractText = null;
+let selectedContractFilename = null;
+
+async function loadSampleContracts() {
+	const select = document.getElementById("live-contract-select");
+	if (!select) return;
+	try {
+		const gatewayUrl = window.GATEWAY_URL || "";
+		const resp = await fetch(`${gatewayUrl}/api/v1/sample-contracts`);
+		if (!resp.ok) return;
+		const contracts = await resp.json();
+		// Clear existing options except placeholder
+		select.innerHTML = '<option value="">-- Select a contract --</option>';
+		contracts.forEach(function(c) {
+			const opt = document.createElement("option");
+			opt.value = c.filename;
+			opt.textContent = c.filename;
+			select.appendChild(opt);
+		});
+	} catch (_e) {
+		// API unavailable; leave dropdown empty
+	}
+}
+
+async function onLiveContractChange(filename) {
+	const dropArea = document.getElementById("drop-area");
+	if (!filename) {
+		selectedContractText = null;
+		selectedContractFilename = null;
+		if (dropArea) {
+			dropArea.textContent = "Drop Contract Here (or click to start demo)";
+			dropArea.style.borderColor = "";
+			dropArea.style.color = "";
+		}
+		return;
+	}
+	if (dropArea) {
+		dropArea.textContent = `Loading ${filename}...`;
+		dropArea.style.borderColor = "var(--color-accent)";
+		dropArea.style.color = "var(--color-accent)";
+	}
+	try {
+		const gatewayUrl = window.GATEWAY_URL || "";
+		const resp = await fetch(`${gatewayUrl}/api/v1/sample-contracts/${encodeURIComponent(filename)}`);
+		if (!resp.ok) throw new Error("Failed to load");
+		const data = await resp.json();
+		selectedContractText = data.text;
+		selectedContractFilename = data.filename;
+		// Store on drop-area for startWorkflowReal to pick up
+		if (dropArea) {
+			dropArea.dataset.contractText = data.text;
+			dropArea.dataset.contractFilename = data.filename;
+			dropArea.textContent = `${filename} loaded - click to process`;
+			dropArea.style.borderColor = "var(--color-pass)";
+			dropArea.style.color = "var(--color-pass)";
+		}
+	} catch (_e) {
+		selectedContractText = null;
+		selectedContractFilename = null;
+		if (dropArea) {
+			dropArea.textContent = `Failed to load ${filename}`;
+			dropArea.style.borderColor = "var(--color-fail)";
+			dropArea.style.color = "var(--color-fail)";
+		}
+	}
+}
+
+// Load sample contracts on page load
+document.addEventListener("DOMContentLoaded", loadSampleContracts);
+
 // --- Sync Live Tab from Active Workflow ---
 function syncLiveTab() {
 	const wf = getActiveWorkflow();
@@ -747,6 +959,7 @@ function syncLiveTab() {
 		"compliance": "var(--color-compliance)",
 		"negotiation": "#b45309",
 		"approval": "var(--color-approval)",
+		"human": "var(--color-approval)",
 	};
 
 	function getColor(agent) {
@@ -788,16 +1001,21 @@ function syncLiveTab() {
 
 const monitorMetricDefaults = {
 	intake: { latency_ms: 1200, tokens_in: 1204, tokens_out: 342, cost: 0.0112 },
-	extraction: { latency_ms: 2800, tokens_in: 3891, tokens_out: 1205, cost: 0.0376 },
+	drafting: { latency_ms: 2200, tokens_in: 3200, tokens_out: 980, cost: 0.0298 },
+	review: { latency_ms: 1800, tokens_in: 2650, tokens_out: 890, cost: 0.0256 },
 	compliance: { latency_ms: 1500, tokens_in: 2156, tokens_out: 678, cost: 0.0209 },
+	negotiation: { latency_ms: 2000, tokens_in: 2800, tokens_out: 950, cost: 0.0271 },
 	approval: { latency_ms: 300, tokens_in: 456, tokens_out: 123, cost: 0.0041 },
 };
 
 function getRoleDisplayName(roleKey) {
 	const normalized = normalizeRoleKey(roleKey);
 	if (normalized === "intake") return "Intake";
+	if (normalized === "drafting") return "Drafting";
 	if (normalized === "extraction") return "Extraction";
+	if (normalized === "review") return "Internal Review";
 	if (normalized === "compliance") return "Compliance";
+	if (normalized === "negotiation") return "Negotiation";
 	if (normalized === "approval") return "Approval";
 	if (normalized === "human") return "Human review";
 	return normalized ? normalized.replace(/(^.|[-_ ]+.)/g, (match) => match.replace(/[-_ ]/, "").toUpperCase()) : "Unmapped";
@@ -805,8 +1023,10 @@ function getRoleDisplayName(roleKey) {
 
 const liveStageFallbacks = {
 	intake: { stageName: "Request and Initiation", nextStageName: "Authoring and Drafting" },
-	extraction: { stageName: "Authoring and Drafting", nextStageName: "Compliance Check" },
-	compliance: { stageName: "Compliance Check", nextStageName: "Approval and Routing" },
+	drafting: { stageName: "Authoring and Drafting", nextStageName: "Internal Review" },
+	review: { stageName: "Internal Review", nextStageName: "Compliance Check" },
+	compliance: { stageName: "Compliance Check", nextStageName: "Negotiation" },
+	negotiation: { stageName: "Negotiation", nextStageName: "Approval and Routing" },
 	approval: { stageName: "Approval and Routing", nextStageName: null },
 	human: { stageName: "Approval and Routing", nextStageName: null },
 };
@@ -1175,7 +1395,18 @@ function startWorkflow() {
 	}
 
 	const dropArea = document.getElementById("drop-area");
-	dropArea.textContent = "Processing NDA.pdf...";
+
+	// Get selected contract filename
+	const contractFilename = selectedContractFilename || dropArea?.dataset?.contractFilename || null;
+	if (!contractFilename) {
+		dropArea.textContent = "Please select a contract from the dropdown first";
+		dropArea.style.borderColor = "var(--color-fail)";
+		dropArea.style.color = "var(--color-fail)";
+		workflowRunning = false;
+		return;
+	}
+
+	dropArea.textContent = `Processing ${contractFilename}...`;
 	dropArea.style.borderColor = "var(--color-accent)";
 	dropArea.style.color = "var(--color-accent)";
 
@@ -1185,12 +1416,18 @@ function startWorkflow() {
 	document.getElementById("contract-details").style.display = "flex";
 
 	const intakeStage = getLiveStageContextForRole("intake");
-	const extractionStage = getLiveStageContextForRole("extraction");
+	const draftingStage = getLiveStageContextForRole("drafting");
+	const reviewStage = getLiveStageContextForRole("review");
 	const complianceStage = getLiveStageContextForRole("compliance");
+	const negotiationStage = getLiveStageContextForRole("negotiation");
 	const approvalStage = getLiveStageContextForRole("approval");
 
+	// Derive contract type from filename for simulated mode
+	const fn = contractFilename.toUpperCase();
+	const simType = fn.includes("NDA") ? "NDA" : fn.includes("MSA") ? "MSA" : fn.includes("SOW") ? "SOW" : fn.includes("SLA") ? "SLA" : fn.includes("AMEND") ? "Amendment" : "Contract";
+
 	const timeline = [
-		// Request and initiation
+		// Stage 1: Request and Initiation (Intake Agent)
 		{
 			time: 500,
 			action: () => {
@@ -1203,9 +1440,9 @@ function startWorkflow() {
 			time: 1200,
 			action: () => {
 				setNodeProgress(intakeStage.nodeId, 60);
-				addToolCall(intakeStage.toolsId, 'classify_document => "NDA" (0.97)');
-				addLog("10:04:01", intakeStage.stageName, "classify_document => NDA (0.97)");
-				document.getElementById("cd-type").textContent = "NDA";
+				addToolCall(intakeStage.toolsId, `classify_document => "${simType}" (0.97)`);
+				addLog("10:04:01", intakeStage.stageName, `classify_document => ${simType} (0.97)`);
+				document.getElementById("cd-type").textContent = simType;
 			},
 		},
 		{
@@ -1222,105 +1459,169 @@ function startWorkflow() {
 			time: 2300,
 			action: () => {
 				setNodeState(intakeStage.nodeId, "complete", "Complete (1.2s)");
-				addLog("10:04:03", intakeStage.stageName, `[PASS] Complete. Next: ${intakeStage.nextStageName || extractionStage.stageName}`);
+				addLog("10:04:03", intakeStage.stageName, `[PASS] Complete. Next: ${intakeStage.nextStageName || draftingStage.stageName}`);
 			},
 		},
-		// Authoring and drafting
+		// Stage 2: Authoring and Drafting (Drafting Agent)
 		{
 			time: 2800,
 			action: () => {
-				setNodeState(extractionStage.nodeId, "processing", "In progress");
-				setNodeProgress(extractionStage.nodeId, 20);
-				addLog("10:04:03", extractionStage.stageName, "Execution started");
+				setNodeState(draftingStage.nodeId, "processing", "In progress");
+				setNodeProgress(draftingStage.nodeId, 20);
+				addLog("10:04:03", draftingStage.stageName, "Drafting started");
 			},
 		},
 		{
 			time: 3500,
 			action: () => {
-				setNodeProgress(extractionStage.nodeId, 50);
-				addToolCall(extractionStage.toolsId, "extract_clauses => 6 clauses found");
-				addLog("10:04:04", extractionStage.stageName, "extract_clauses => 6 clauses");
+				setNodeProgress(draftingStage.nodeId, 50);
+				addToolCall(draftingStage.toolsId, "extract_clauses => 6 clauses found");
+				addLog("10:04:04", draftingStage.stageName, "extract_clauses => 6 clauses");
 			},
 		},
 		{
 			time: 4200,
 			action: () => {
-				setNodeProgress(extractionStage.nodeId, 80);
-				addToolCall(extractionStage.toolsId, "identify_parties => Acme Corp, Beta Inc");
-				addLog("10:04:04", extractionStage.stageName, "identify_parties => 2 parties");
+				setNodeProgress(draftingStage.nodeId, 80);
+				addToolCall(draftingStage.toolsId, "identify_parties => Acme Corp, Beta Inc");
+				addLog("10:04:04", draftingStage.stageName, "identify_parties => 2 parties");
 			},
 		},
 		{
 			time: 4800,
 			action: () => {
-				setNodeProgress(extractionStage.nodeId, 100);
-				addToolCall(extractionStage.toolsId, "extract_dates_values => effective: 2026-03-01");
-				addLog("10:04:05", extractionStage.stageName, "extract_dates_values => 2 dates");
+				setNodeProgress(draftingStage.nodeId, 100);
+				addToolCall(draftingStage.toolsId, "extract_dates_values => effective: 2026-03-01");
+				addLog("10:04:05", draftingStage.stageName, "extract_dates_values => 2 dates");
 			},
 		},
 		{
 			time: 5200,
 			action: () => {
-				setNodeState(extractionStage.nodeId, "complete", "Complete (2.8s)");
-				addLog("10:04:05", extractionStage.stageName, `[PASS] Complete. Next: ${extractionStage.nextStageName || complianceStage.stageName}`);
+				setNodeState(draftingStage.nodeId, "complete", "Complete (2.2s)");
+				addLog("10:04:05", draftingStage.stageName, `[PASS] Complete. Next: ${draftingStage.nextStageName || reviewStage.stageName}`);
 			},
 		},
-		// Compliance check
+		// Stage 3: Internal Review (Internal Review Agent)
 		{
 			time: 5700,
 			action: () => {
+				setNodeState(reviewStage.nodeId, "processing", "In progress");
+				setNodeProgress(reviewStage.nodeId, 25);
+				addLog("10:04:06", reviewStage.stageName, "Internal review started");
+			},
+		},
+		{
+			time: 6300,
+			action: () => {
+				setNodeProgress(reviewStage.nodeId, 60);
+				addToolCall(reviewStage.toolsId, "get_audit_log => 3 prior entries found");
+				addLog("10:04:06", reviewStage.stageName, "get_audit_log => 3 prior entries");
+			},
+		},
+		{
+			time: 6900,
+			action: () => {
+				setNodeProgress(reviewStage.nodeId, 100);
+				addToolCall(reviewStage.toolsId, "create_audit_entry => Redline summary logged");
+				addLog("10:04:07", reviewStage.stageName, "create_audit_entry => Redline summary logged");
+			},
+		},
+		{
+			time: 7300,
+			action: () => {
+				setNodeState(reviewStage.nodeId, "complete", "Complete (1.8s)");
+				addLog("10:04:07", reviewStage.stageName, `[PASS] Complete. Next: ${reviewStage.nextStageName || complianceStage.stageName}`);
+			},
+		},
+		// Stage 4: Compliance Check (Compliance Agent)
+		{
+			time: 7800,
+			action: () => {
 				setNodeState(complianceStage.nodeId, "processing", "In progress");
 				setNodeProgress(complianceStage.nodeId, 30);
-				addLog("10:04:06", complianceStage.stageName, "Policy evaluation started");
-			},
-		},
-		{
-			time: 6400,
-			action: () => {
-				setNodeProgress(complianceStage.nodeId, 70);
-				addToolCall(complianceStage.toolsId, "check_policy => [WARN] Liability $2.5M");
-				addLog("10:04:06", complianceStage.stageName, "check_policy => [WARN] Liability exceeds $1M");
-			},
-		},
-		{
-			time: 7000,
-			action: () => {
-				setNodeProgress(complianceStage.nodeId, 100);
-				addToolCall(complianceStage.toolsId, "flag_risk => [WARN] No termination clause");
-				addLog("10:04:06", complianceStage.stageName, "flag_risk => [WARN] Missing termination for convenience");
-				document.getElementById("cd-risk").innerHTML = '<span class="badge badge-fail">HIGH</span>';
-			},
-		},
-		{
-			time: 7500,
-			action: () => {
-				setNodeState(complianceStage.nodeId, "warning", "2 flags (1.5s)");
-				addLog("10:04:06", complianceStage.stageName, `[WARN] Complete. 2 flags raised. Next: ${complianceStage.nextStageName || approvalStage.stageName}`);
-			},
-		},
-		// Approval and routing
-		{
-			time: 8000,
-			action: () => {
-				setNodeState(approvalStage.nodeId, "processing", "In progress");
-				setNodeProgress(approvalStage.nodeId, 50);
-				addLog("10:04:07", approvalStage.stageName, "route_approval => Risk: HIGH");
+				addLog("10:04:08", complianceStage.stageName, "Policy evaluation started");
 			},
 		},
 		{
 			time: 8500,
 			action: () => {
-				setNodeProgress(approvalStage.nodeId, 100);
-				addToolCall(approvalStage.toolsId, "escalate_to_human => HITL required");
-				addLog("10:04:07", approvalStage.stageName, "escalate_to_human => AWAITING HUMAN REVIEW");
+				setNodeProgress(complianceStage.nodeId, 70);
+				addToolCall(complianceStage.toolsId, "check_policy => [WARN] Liability $2.5M");
+				addLog("10:04:08", complianceStage.stageName, "check_policy => [WARN] Liability exceeds $1M");
 			},
 		},
 		{
-			time: 9000,
+			time: 9100,
+			action: () => {
+				setNodeProgress(complianceStage.nodeId, 100);
+				addToolCall(complianceStage.toolsId, "flag_risk => [WARN] No termination clause");
+				addLog("10:04:09", complianceStage.stageName, "flag_risk => [WARN] Missing termination for convenience");
+				document.getElementById("cd-risk").innerHTML = '<span class="badge badge-fail">HIGH</span>';
+			},
+		},
+		{
+			time: 9500,
+			action: () => {
+				setNodeState(complianceStage.nodeId, "warning", "2 flags (1.5s)");
+				addLog("10:04:09", complianceStage.stageName, `[WARN] Complete. 2 flags raised. Next: ${complianceStage.nextStageName || negotiationStage.stageName}`);
+			},
+		},
+		// Stage 5: Negotiation (Negotiation Agent)
+		{
+			time: 10000,
+			action: () => {
+				setNodeState(negotiationStage.nodeId, "processing", "In progress");
+				setNodeProgress(negotiationStage.nodeId, 25);
+				addLog("10:04:10", negotiationStage.stageName, "Counterparty analysis started");
+			},
+		},
+		{
+			time: 10700,
+			action: () => {
+				setNodeProgress(negotiationStage.nodeId, 60);
+				addToolCall(negotiationStage.toolsId, "route_approval => Counterparty markup assessed");
+				addLog("10:04:10", negotiationStage.stageName, "route_approval => Counterparty markup assessed");
+			},
+		},
+		{
+			time: 11300,
+			action: () => {
+				setNodeProgress(negotiationStage.nodeId, 100);
+				addToolCall(negotiationStage.toolsId, "notify_stakeholder => Fallback positions recommended");
+				addLog("10:04:11", negotiationStage.stageName, "notify_stakeholder => Fallback language recommended");
+			},
+		},
+		{
+			time: 11700,
+			action: () => {
+				setNodeState(negotiationStage.nodeId, "complete", "Complete (2.0s)");
+				addLog("10:04:11", negotiationStage.stageName, `[PASS] Complete. Next: ${negotiationStage.nextStageName || approvalStage.stageName}`);
+			},
+		},
+		// Stage 6: Approval Routing (Approval Agent)
+		{
+			time: 12200,
+			action: () => {
+				setNodeState(approvalStage.nodeId, "processing", "In progress");
+				setNodeProgress(approvalStage.nodeId, 50);
+				addLog("10:04:12", approvalStage.stageName, "route_approval => Risk: HIGH");
+			},
+		},
+		{
+			time: 12700,
+			action: () => {
+				setNodeProgress(approvalStage.nodeId, 100);
+				addToolCall(approvalStage.toolsId, "escalate_to_human => HITL required");
+				addLog("10:04:12", approvalStage.stageName, "escalate_to_human => AWAITING HUMAN REVIEW");
+			},
+		},
+		{
+			time: 13200,
 			action: () => {
 				setNodeState(approvalStage.nodeId, "hitl", "Awaiting review");
 				document.getElementById("hitl-panel").classList.add("visible");
-				addLog("10:04:07", "System", `--- PAUSED: ${approvalStage.stageName} awaiting human review ---`);
+				addLog("10:04:12", "System", `--- PAUSED: ${approvalStage.stageName} awaiting human review ---`);
 				dropArea.textContent = `Pipeline paused - ${approvalStage.stageName} requires review`;
 				dropArea.style.borderColor = "var(--color-approval)";
 				dropArea.style.color = "var(--color-approval)";

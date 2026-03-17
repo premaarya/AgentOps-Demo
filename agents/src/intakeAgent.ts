@@ -35,7 +35,6 @@ export async function runIntakeAgent(
 			contract_type: "UNKNOWN",
 			confidence_score: 0,
 			parties: [],
-			metadata: {},
 		};
 	}
 
@@ -47,7 +46,14 @@ export async function runIntakeAgent(
 		type: (parsedType as string) ?? "UNKNOWN",
 		confidence: (parsedConfidence as number) ?? 0,
 		parties: (parsed.parties as string[]) ?? [],
-		metadata: (parsed.metadata as Record<string, string>) ?? {},
+		metadata: (parsed.metadata as Record<string, string>) ?? {
+			title: parsed.title as string,
+			effective_date: parsed.effective_date as string,
+			expiry_date: parsed.expiry_date as string,
+			value: parsed.value != null ? String(parsed.value) : undefined,
+			currency: parsed.currency as string,
+			jurisdiction: parsed.jurisdiction as string,
+		},
 		traceId,
 	};
 }
