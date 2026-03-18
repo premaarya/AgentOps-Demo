@@ -83,7 +83,7 @@ const AGENT_DEFS: AgentDef[] = [
 		promptFile: "drafting-system.md",
 		tools: ["extract_clauses", "identify_parties", "extract_dates_values"],
 		evalPrompt:
-			'Produce a first-pass draft package for a SaaS contract using approved fallback language for liability, data processing, and renewal terms.',
+			"Produce a first-pass draft package for a SaaS contract using approved fallback language for liability, data processing, and renewal terms.",
 	},
 	{
 		key: "review",
@@ -91,7 +91,7 @@ const AGENT_DEFS: AgentDef[] = [
 		promptFile: "review-system.md",
 		tools: ["get_audit_log", "create_audit_entry"],
 		evalPrompt:
-			'Summarize the internal redlines for a vendor contract and identify the top three items that need legal review before compliance routing.',
+			"Summarize the internal redlines for a vendor contract and identify the top three items that need legal review before compliance routing.",
 	},
 	{
 		key: "compliance",
@@ -107,7 +107,7 @@ const AGENT_DEFS: AgentDef[] = [
 		promptFile: "negotiation-system.md",
 		tools: ["route_approval", "notify_stakeholder"],
 		evalPrompt:
-			'Assess counterparty markup that removes audit rights and increases termination notice periods, then recommend fallback language for the negotiator.',
+			"Assess counterparty markup that removes audit rights and increases termination notice periods, then recommend fallback language for the negotiator.",
 	},
 	{
 		key: "approval",
@@ -157,7 +157,12 @@ const REQUEST_TIMEOUT_MS = 30_000;
 
 // --- Foundry HTTP Client ---
 
-async function foundryFetch(cfg: FoundryDeployConfig, endpoint: string, path: string, init: RequestInit = {}): Promise<Response> {
+async function foundryFetch(
+	cfg: FoundryDeployConfig,
+	endpoint: string,
+	path: string,
+	init: RequestInit = {},
+): Promise<Response> {
 	const base = endpoint.replace(/\/+$/, "");
 	const headers = await withFoundryAuthHeaders(
 		{
@@ -295,11 +300,7 @@ interface ExistingAssistant {
 async function listExistingAgents(cfg: FoundryDeployConfig): Promise<ExistingAssistant[]> {
 	const agentEndpoint = cfg.projectEndpoint || cfg.endpoint;
 	try {
-		const res = await foundryFetch(
-			cfg,
-			agentEndpoint,
-			`/openai/assistants?api-version=${AGENT_API_VERSION}&limit=100`,
-		);
+		const res = await foundryFetch(cfg, agentEndpoint, `/openai/assistants?api-version=${AGENT_API_VERSION}&limit=100`);
 		if (!res.ok) return [];
 		const data = (await res.json()) as { data?: ExistingAssistant[] };
 		return Array.isArray(data.data) ? data.data : [];
@@ -568,10 +569,7 @@ async function activateContentSafety(cfg: FoundryDeployConfig): Promise<{ activa
 
 // --- Stage 5: Quick Evaluation ---
 
-async function runEvaluation(
-	cfg: FoundryDeployConfig,
-	agents: FoundryAgentInfo[],
-): Promise<StageResult> {
+async function runEvaluation(cfg: FoundryDeployConfig, agents: FoundryAgentInfo[]): Promise<StageResult> {
 	const t0 = Date.now();
 	const agentEndpoint = cfg.projectEndpoint || cfg.endpoint;
 	const registeredAgents = agents.filter((agent) => agent.status === "registered");
@@ -596,12 +594,10 @@ async function runEvaluation(
 				continue;
 			}
 
-			const threadRes = await foundryFetch(
-				cfg,
-				agentEndpoint,
-				`/openai/threads?api-version=${AGENT_API_VERSION}`,
-				{ method: "POST", body: JSON.stringify({}) },
-			);
+			const threadRes = await foundryFetch(cfg, agentEndpoint, `/openai/threads?api-version=${AGENT_API_VERSION}`, {
+				method: "POST",
+				body: JSON.stringify({}),
+			});
 			if (!threadRes.ok) {
 				failures.push(`${agent.agent_name}: thread creation failed (${threadRes.status})`);
 				continue;
@@ -891,12 +887,9 @@ export async function cleanupAgents(
 
 	for (const id of agentIds) {
 		try {
-			const res = await foundryFetch(
-				cfg,
-				agentEndpoint,
-				`/openai/assistants/${id}?api-version=${AGENT_API_VERSION}`,
-				{ method: "DELETE" },
-			);
+			const res = await foundryFetch(cfg, agentEndpoint, `/openai/assistants/${id}?api-version=${AGENT_API_VERSION}`, {
+				method: "DELETE",
+			});
 			if (res.ok || res.status === 404) {
 				deleted++;
 			} else {

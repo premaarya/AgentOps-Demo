@@ -1207,7 +1207,7 @@ body {
 	padding: 2px 0;
 }
 
-.designer-tool-checkbox input[type=checkbox] {
+.designer-tool-checkbox input[type="checkbox"] {
 	accent-color: var(--color-accent);
 	cursor: pointer;
 }

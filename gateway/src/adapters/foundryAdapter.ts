@@ -1,5 +1,5 @@
+import { type FoundryAuthConfig, withFoundryAuthHeaders } from "../services/foundryAuth.js";
 import type { ILlmAdapter, LlmRequest, LlmResponse } from "../types.js";
-import { withFoundryAuthHeaders, type FoundryAuthConfig } from "../services/foundryAuth.js";
 
 const DEPLOY_API_VERSION = "2024-10-21";
 

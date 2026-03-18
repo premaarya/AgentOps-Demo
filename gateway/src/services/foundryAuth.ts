@@ -52,10 +52,7 @@ export function getFoundryConfigurationError(config: FoundryAuthConfig & { endpo
 	return "";
 }
 
-export async function withFoundryAuthHeaders(
-	config: FoundryAuthConfig,
-	headersInit?: HeadersInit,
-): Promise<Headers> {
+export async function withFoundryAuthHeaders(config: FoundryAuthConfig, headersInit?: HeadersInit): Promise<Headers> {
 	const headers = new Headers(headersInit);
 
 	if (config.authMode === "managed-identity") {

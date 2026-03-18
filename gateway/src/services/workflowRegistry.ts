@@ -122,9 +122,7 @@ interface RoleAssetDefinition {
 	outputSchema: string;
 }
 
-const workflowStore = new JsonStore<WorkflowDefinition>(
-	resolve(appConfig.dataDir, "workflows", "definitions.json"),
-);
+const workflowStore = new JsonStore<WorkflowDefinition>(resolve(appConfig.dataDir, "workflows", "definitions.json"));
 const contractStageCatalogReference = "config/stages/contract-lifecycle.json";
 const runtimeDir = resolve(appConfig.dataDir, "runtime");
 const activePackagePath = resolve(runtimeDir, "active-workflow.json");
@@ -238,11 +236,7 @@ function inferRoleKey(agent: WorkflowAgent): string {
 		return "negotiation";
 	}
 
-	if (
-		searchable.includes("signature") ||
-		searchable.includes("execution") ||
-		searchable.includes("signing")
-	) {
+	if (searchable.includes("signature") || searchable.includes("execution") || searchable.includes("signing")) {
 		return "signature";
 	}
 
@@ -255,11 +249,7 @@ function inferRoleKey(agent: WorkflowAgent): string {
 		return "obligations";
 	}
 
-	if (
-		searchable.includes("renewal") ||
-		searchable.includes("expiry") ||
-		searchable.includes("expiration")
-	) {
+	if (searchable.includes("renewal") || searchable.includes("expiry") || searchable.includes("expiration")) {
 		return "renewal";
 	}
 
@@ -308,7 +298,11 @@ function inferRoleKey(agent: WorkflowAgent): string {
 		return "approval";
 	}
 
-	const nonAgentKind: Partial<Record<string, string>> = { human: "human", merge: "merge", orchestrator: "orchestrator" };
+	const nonAgentKind: Partial<Record<string, string>> = {
+		human: "human",
+		merge: "merge",
+		orchestrator: "orchestrator",
+	};
 	return nonAgentKind[agent.kind ?? ""] ?? "custom";
 }
 
@@ -376,10 +370,10 @@ function buildRuntimeAgentBinding(agent: WorkflowAgent): RuntimeAgentBinding {
 		runtime_role_key: runtimeRoleKey,
 		declarative: declarativeAssets
 			? {
-				agent_config: declarativeAssets.agentConfig,
-				prompt: declarativeAssets.prompt,
-				output_schema: declarativeAssets.outputSchema,
-			}
+					agent_config: declarativeAssets.agentConfig,
+					prompt: declarativeAssets.prompt,
+					output_schema: declarativeAssets.outputSchema,
+				}
 			: {},
 	};
 }
@@ -424,17 +418,19 @@ function buildContractStageMap(bindings: RuntimeAgentBinding[]): ContractStageMa
 	}
 
 	const stages = getContractStageCatalog().map((stage) => {
-		const assignedBindings = (stageAssignments.get(stage.id) ?? []).slice().sort((left, right) => left.order - right.order);
+		const assignedBindings = (stageAssignments.get(stage.id) ?? [])
+			.slice()
+			.sort((left, right) => left.order - right.order);
 		const executionGroups: ContractStageExecutionGroup[] = assignedBindings.length
 			? [
-				{
-					id: `group-${stage.id}`,
-					name: stage.default_execution_group_name,
-					runtime_agent_ids: assignedBindings.map((binding) => binding.id),
-					runtime_role_keys: assignedBindings.map((binding) => binding.runtime_role_key),
-					primary_mcp_affinity: [...stage.primary_mcp_affinity],
-				},
-			]
+					{
+						id: `group-${stage.id}`,
+						name: stage.default_execution_group_name,
+						runtime_agent_ids: assignedBindings.map((binding) => binding.id),
+						runtime_role_keys: assignedBindings.map((binding) => binding.runtime_role_key),
+						primary_mcp_affinity: [...stage.primary_mcp_affinity],
+					},
+				]
 			: [];
 
 		return {
@@ -476,11 +472,13 @@ function ensureInitialized(): void {
 	}
 }
 
-export function validateWorkflowInput(input: {
-	name?: string;
-	type?: string;
-	agents?: WorkflowAgent[];
-} | null): string[] {
+export function validateWorkflowInput(
+	input: {
+		name?: string;
+		type?: string;
+		agents?: WorkflowAgent[];
+	} | null,
+): string[] {
 	const errors: string[] = [];
 	if (!input?.name?.trim()) {
 		errors.push("Workflow name is required.");
@@ -560,11 +558,7 @@ export function buildWorkflowPackage(workflow: WorkflowDefinition): WorkflowPack
 			"config/schemas/workflow-package.json",
 			contractStageCatalogReference,
 		],
-		policy_references: [
-			"data/policies/contract_policies.json",
-			"data/policies.json",
-			"data/clauses.json",
-		],
+		policy_references: ["data/policies/contract_policies.json", "data/policies.json", "data/clauses.json"],
 		contract_stage_map: contractStageMap,
 		agents: bindings,
 	};
@@ -653,7 +647,9 @@ export async function saveWorkflowDefinition(input: {
 	return created;
 }
 
-export async function activateWorkflowDefinition(id: string): Promise<{ workflow: WorkflowDefinition; workflowPackage: WorkflowPackage }> {
+export async function activateWorkflowDefinition(
+	id: string,
+): Promise<{ workflow: WorkflowDefinition; workflowPackage: WorkflowPackage }> {
 	ensureInitialized();
 	const workflow = workflowStore.getById(id);
 	if (!workflow) {

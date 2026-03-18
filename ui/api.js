@@ -11,8 +11,12 @@ let dashboardMode = "simulated"; // 'simulated' | 'real'
 // Fetch deploy admin key from gateway (overrides local default)
 fetch(`${GATEWAY_URL}/api/v1/client-config`, { signal: AbortSignal.timeout(5000) })
 	.then((res) => res.json())
-	.then((cfg) => { if (cfg.deployAdminKey) DEPLOY_ADMIN_KEY = cfg.deployAdminKey; })
-	.catch(() => { /* keep local default */ });
+	.then((cfg) => {
+		if (cfg.deployAdminKey) DEPLOY_ADMIN_KEY = cfg.deployAdminKey;
+	})
+	.catch(() => {
+		/* keep local default */
+	});
 let ws = null; // WebSocket connection for live workflow
 let currentContractId = null; // Track the active contract ID for HITL
 
@@ -142,7 +146,9 @@ function runDeployPipelineReal() {
 			// Map backend stage names to UI stage element IDs
 			const pipelineStages = data.stages || [];
 			const stageByName = {};
-			pipelineStages.forEach((s) => { stageByName[s.name] = s; });
+			pipelineStages.forEach((s) => {
+				stageByName[s.name] = s;
+			});
 
 			// Map: BUILD=Preflight, TEST=Model Deployment, DEPLOY=Agent Registration, REGISTER=Health Check
 			const stageMapping = {
@@ -160,8 +166,7 @@ function runDeployPipelineReal() {
 						el.classList.add("completed");
 						if (!stageData) {
 							// Stage didn't run (early pipeline exit)
-							el.querySelector(".deploy-stage-status").innerHTML =
-								'<span class="badge badge-info">Skipped</span>';
+							el.querySelector(".deploy-stage-status").innerHTML = '<span class="badge badge-info">Skipped</span>';
 							el.querySelector(".deploy-stage-time").textContent = "--";
 						} else {
 							const passed =
@@ -326,12 +331,12 @@ function handleWorkflowEvent(msg) {
 	};
 	const designRole = pipelineToDesignRole[agentName.toLowerCase()] || agentName.toLowerCase();
 
-	const nodeId = (typeof window.getWorkflowNodeIdForAgentName === "function")
-		? window.getWorkflowNodeIdForAgentName(designRole)
-		: `wf-${designRole}`;
-	const liveStageContext = (typeof window.getLiveStageContextForRole === "function")
-		? window.getLiveStageContextForRole(designRole)
-		: null;
+	const nodeId =
+		typeof window.getWorkflowNodeIdForAgentName === "function"
+			? window.getWorkflowNodeIdForAgentName(designRole)
+			: `wf-${designRole}`;
+	const liveStageContext =
+		typeof window.getLiveStageContextForRole === "function" ? window.getLiveStageContextForRole(designRole) : null;
 	const logActor = liveStageContext?.stageName || agentName || "System";
 
 	if (event === "pipeline_status" && status === "processing_started") {
@@ -376,9 +381,9 @@ function handleWorkflowEvent(msg) {
 		if (isEscalation && msg.result) {
 			populateHitlPanel(msg.result);
 			document.getElementById("hitl-panel").classList.add("visible");
-			addLog(time, "System", `--- PAUSED: ${(liveStageContext?.stageName || "Approval")} awaiting human review ---`);
+			addLog(time, "System", `--- PAUSED: ${liveStageContext?.stageName || "Approval"} awaiting human review ---`);
 			const dropArea = document.getElementById("drop-area");
-			dropArea.textContent = `Pipeline paused - ${(liveStageContext?.stageName || "Approval")} requires review`;
+			dropArea.textContent = `Pipeline paused - ${liveStageContext?.stageName || "Approval"} requires review`;
 			dropArea.style.borderColor = "var(--color-approval)";
 			dropArea.style.color = "var(--color-approval)";
 		}
@@ -403,9 +408,10 @@ function handleWorkflowEvent(msg) {
 		}
 	} else if (event === "pipeline_status" && status === "awaiting_human_review") {
 		// Reinforce HITL state (the agent_step_complete already showed the panel)
-		const approvalNodeId = (typeof window.getWorkflowNodeIdForAgentName === "function")
-			? window.getWorkflowNodeIdForAgentName("approval")
-			: "wf-approval";
+		const approvalNodeId =
+			typeof window.getWorkflowNodeIdForAgentName === "function"
+				? window.getWorkflowNodeIdForAgentName("approval")
+				: "wf-approval";
 		setNodeState(approvalNodeId, "hitl", "Awaiting review");
 		if (!document.getElementById("hitl-panel").classList.contains("visible")) {
 			document.getElementById("hitl-panel").classList.add("visible");
@@ -437,14 +443,18 @@ function renderStageOutput(containerId, role, result) {
 
 	if (role === "intake") {
 		addToolOutput(container, "Type", result.type || result.contract_type || "--");
-		addToolOutput(container, "Confidence", result.confidence != null ? result.confidence : result.confidence_score || "--");
+		addToolOutput(
+			container,
+			"Confidence",
+			result.confidence != null ? result.confidence : result.confidence_score || "--",
+		);
 		if (result.parties && result.parties.length > 0) {
 			addToolOutput(container, "Parties", result.parties.join(", "));
 		}
 	} else if (role === "drafting" || role === "extraction") {
 		if (result.clauses && Array.isArray(result.clauses)) {
 			addToolOutput(container, "Clauses", `${result.clauses.length} extracted`);
-			result.clauses.slice(0, 3).forEach(function(c) {
+			result.clauses.slice(0, 3).forEach((c) => {
 				const label = c.type || c.name || c.title || "clause";
 				addToolOutput(container, "", label);
 			});
@@ -457,9 +467,9 @@ function renderStageOutput(containerId, role, result) {
 		}
 	} else if (role === "compliance") {
 		addToolOutput(container, "Risk", result.overallRisk || result.overall_risk || "--");
-		addToolOutput(container, "Flags", result.flagsCount != null ? result.flagsCount : (result.flags_count || 0));
+		addToolOutput(container, "Flags", result.flagsCount != null ? result.flagsCount : result.flags_count || 0);
 		if (result.findings && Array.isArray(result.findings)) {
-			result.findings.slice(0, 3).forEach(function(f) {
+			result.findings.slice(0, 3).forEach((f) => {
 				addToolOutput(container, "", f.description || f.finding || f.message || JSON.stringify(f).slice(0, 60));
 			});
 		}
@@ -482,7 +492,7 @@ function renderStageOutput(containerId, role, result) {
 	} else {
 		// Generic: display up to 4 keys
 		var keys = Object.keys(result).slice(0, 4);
-		keys.forEach(function(k) {
+		keys.forEach((k) => {
 			var v = result[k];
 			if (typeof v === "object") v = JSON.stringify(v).slice(0, 60);
 			addToolOutput(container, k, String(v).slice(0, 80));
@@ -500,17 +510,29 @@ function addToolOutput(container, label, value) {
 
 function logStageOutput(time, actor, role, result) {
 	if (role === "intake") {
-		addLog(time, actor, `Type: ${result.type || result.contract_type || "?"}, Confidence: ${result.confidence != null ? result.confidence : (result.confidence_score || "?")}` +
-			(result.parties ? `, Parties: ${result.parties.join(", ")}` : ""));
+		addLog(
+			time,
+			actor,
+			`Type: ${result.type || result.contract_type || "?"}, Confidence: ${result.confidence != null ? result.confidence : result.confidence_score || "?"}` +
+				(result.parties ? `, Parties: ${result.parties.join(", ")}` : ""),
+		);
 	} else if (role === "drafting" || role === "extraction") {
 		var count = result.clauses ? result.clauses.length : 0;
-		addLog(time, actor, `Extracted ${count} clauses` + (result.parties ? `, Parties: ${result.parties.join(", ")}` : ""));
+		addLog(
+			time,
+			actor,
+			`Extracted ${count} clauses` + (result.parties ? `, Parties: ${result.parties.join(", ")}` : ""),
+		);
 	} else if (role === "review") {
 		var changes = result.materialChanges || result.material_changes || [];
 		var unresolved = result.unresolvedItems || result.unresolved_items || [];
 		addLog(time, actor, `Review: ${changes.length} material changes, ${unresolved.length} unresolved items`);
 	} else if (role === "compliance") {
-		addLog(time, actor, `Risk: ${result.overallRisk || result.overall_risk || "?"}, Flags: ${result.flagsCount != null ? result.flagsCount : (result.flags_count || 0)}`);
+		addLog(
+			time,
+			actor,
+			`Risk: ${result.overallRisk || result.overall_risk || "?"}, Flags: ${result.flagsCount != null ? result.flagsCount : result.flags_count || 0}`,
+		);
 	} else if (role === "negotiation") {
 		var positions = result.counterpartyPositions || result.counterparty_positions || [];
 		var esc = result.escalationRequired != null ? result.escalationRequired : result.escalation_required;
@@ -545,10 +567,8 @@ function populateHitlPanel(approvalResult) {
 		// Use stored compliance results if available
 		var compResult = window._lastComplianceResult;
 		if (compResult && compResult.clauseResults) {
-			var flagged = compResult.clauseResults.filter(function(r) {
-				return r.status === "fail" || r.status === "warn";
-			});
-			flagged.forEach(function(f) {
+			var flagged = compResult.clauseResults.filter((r) => r.status === "fail" || r.status === "warn");
+			flagged.forEach((f) => {
 				var div = document.createElement("div");
 				div.className = "hitl-flag";
 				var icon = document.createElement("span");
@@ -621,9 +641,10 @@ function resolveHitlReal(decision) {
 		changes: { text: "Changes Requested", log: "Requested changes" },
 	};
 	const result = statusMap[decision];
-	const approvalStage = (typeof window.getLiveStageContextForRole === "function")
-		? window.getLiveStageContextForRole("approval")
-		: { nodeId: "wf-approval", stageName: "Approval and Routing" };
+	const approvalStage =
+		typeof window.getLiveStageContextForRole === "function"
+			? window.getLiveStageContextForRole("approval")
+			: { nodeId: "wf-approval", stageName: "Approval and Routing" };
 	setNodeState(approvalStage.nodeId, decision === "approved" ? "complete" : "warning", result.text);
 	addLog(new Date().toLocaleTimeString(), `${approvalStage.stageName} - Human review`, result.log);
 	addLog(

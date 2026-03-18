@@ -1,14 +1,14 @@
 import type { FastifyInstance } from "fastify";
 import {
+	type WorkflowAgent,
 	activateWorkflowDefinition,
 	deleteWorkflowDefinition,
-	getContractStageCatalog,
 	getActiveWorkflow,
 	getActiveWorkflowPackage,
+	getContractStageCatalog,
 	getWorkflowById,
 	listWorkflows,
 	saveWorkflowDefinition,
-	type WorkflowAgent,
 	validateWorkflowInput,
 } from "../services/workflowRegistry.js";
 
@@ -136,4 +136,3 @@ export async function workflowRoutes(app: FastifyInstance): Promise<void> {
 		return reply.send({ message: "Workflow deleted" });
 	});
 }
-

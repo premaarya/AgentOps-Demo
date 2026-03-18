@@ -1,0 +1,16 @@
+# Normalize all text files to LF in the repository.
+# On checkout Windows will get CRLF; on macOS/Linux gets LF.
+* text=auto eol=lf
+
+# Explicitly set known binary extensions so Git doesn't try to diff them.
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+
+# Ensure .cmd and .bat files use CRLF on all platforms.
+*.cmd text eol=crlf
+*.bat text eol=crlf

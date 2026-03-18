@@ -24,11 +24,7 @@ export function delay(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function waitForHealth(
-	port: number,
-	label: string,
-	options: WaitForHealthOptions = {},
-): Promise<boolean> {
+export async function waitForHealth(port: number, label: string, options: WaitForHealthOptions = {}): Promise<boolean> {
 	const {
 		path = defaultWaitForHealthOptions.path,
 		retries = defaultWaitForHealthOptions.retries,

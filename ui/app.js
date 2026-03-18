@@ -66,8 +66,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // --- View 1: Design Canvas ---
 // Design Canvas is now managed by WorkflowDesigner (workflow-designer.js)
-function toggleAgentDetail() { /* Legacy - handled by WorkflowDesigner */ }
-function resetLayout() { if (typeof WorkflowDesigner !== "undefined") WorkflowDesigner.resetToDefault(); }
+function toggleAgentDetail() {
+	/* Legacy - handled by WorkflowDesigner */
+}
+function resetLayout() {
+	if (typeof WorkflowDesigner !== "undefined") WorkflowDesigner.resetToDefault();
+}
 
 // --- Active Workflow Integration ---
 // When the user clicks "Push to Pipeline", this event fires and propagates
@@ -83,7 +87,8 @@ function normalizeWorkflowShape(workflow) {
 	return {
 		...rawWorkflow,
 		id: rawWorkflow.workflow_id || rawWorkflow.id || workflow.workflow_id || workflow.id || "",
-		name: rawWorkflow.workflow_name || rawWorkflow.name || workflow.workflow_name || workflow.name || "Untitled workflow",
+		name:
+			rawWorkflow.workflow_name || rawWorkflow.name || workflow.workflow_name || workflow.name || "Untitled workflow",
 		agents,
 		contract_stage_map: rawWorkflow.contract_stage_map || workflow.contract_stage_map || null,
 	};
@@ -121,7 +126,9 @@ function refreshActiveWorkflowFromGateway() {
 window.refreshActiveWorkflowFromGateway = refreshActiveWorkflowFromGateway;
 
 function normalizeRoleKey(value) {
-	return String(value || "").trim().toLowerCase();
+	return String(value || "")
+		.trim()
+		.toLowerCase();
 }
 
 function deriveAgentRoleKey(agent) {
@@ -157,37 +164,32 @@ function deriveAgentRoleKey(agent) {
 	}
 
 	if (
-		tools.has("upload_contract")
-		|| tools.has("classify_document")
-		|| text.includes("intake")
-		|| text.includes("classif")
+		tools.has("upload_contract") ||
+		tools.has("classify_document") ||
+		text.includes("intake") ||
+		text.includes("classif")
 	) {
 		return "intake";
 	}
 
-	if (
-		tools.has("check_policy")
-		|| tools.has("flag_risk")
-		|| text.includes("compliance")
-		|| text.includes("policy")
-	) {
+	if (tools.has("check_policy") || tools.has("flag_risk") || text.includes("compliance") || text.includes("policy")) {
 		return "compliance";
 	}
 
 	if (
-		tools.has("extract_clauses")
-		|| tools.has("identify_parties")
-		|| text.includes("extract")
-		|| text.includes("draft")
+		tools.has("extract_clauses") ||
+		tools.has("identify_parties") ||
+		text.includes("extract") ||
+		text.includes("draft")
 	) {
 		return "extraction";
 	}
 
 	if (
-		tools.has("route_approval")
-		|| tools.has("escalate_to_human")
-		|| text.includes("approval")
-		|| text.includes("human")
+		tools.has("route_approval") ||
+		tools.has("escalate_to_human") ||
+		text.includes("approval") ||
+		text.includes("human")
 	) {
 		return "approval";
 	}
@@ -200,7 +202,9 @@ function getAgentNodeId(agent) {
 	if (["intake", "drafting", "extraction", "review", "compliance", "negotiation", "approval"].includes(roleKey)) {
 		return `wf-${roleKey}`;
 	}
-	return `wf-${String(agent?.id || roleKey).replace(/[^a-z0-9_-]/gi, "-").toLowerCase()}`;
+	return `wf-${String(agent?.id || roleKey)
+		.replace(/[^a-z0-9_-]/gi, "-")
+		.toLowerCase()}`;
 }
 
 window.getWorkflowNodeIdForAgentName = function getWorkflowNodeIdForAgentName(agentName) {
@@ -317,9 +321,7 @@ function getWorkflowStagesForTesting(workflow) {
 	if (!normalizedWorkflow) return [];
 
 	const agents = [...(normalizedWorkflow.agents || [])].sort((a, b) => {
-		return (a.stage ?? 0) - (b.stage ?? 0)
-			|| (a.lane ?? 0) - (b.lane ?? 0)
-			|| (a.order ?? 0) - (b.order ?? 0);
+		return (a.stage ?? 0) - (b.stage ?? 0) || (a.lane ?? 0) - (b.lane ?? 0) || (a.order ?? 0) - (b.order ?? 0);
 	});
 	const agentsById = new Map(agents.map((agent) => [agent.id, agent]));
 	const contractStageMap = normalizedWorkflow.contract_stage_map;
@@ -327,18 +329,20 @@ function getWorkflowStagesForTesting(workflow) {
 	if (contractStageMap?.stages?.length) {
 		return contractStageMap.stages
 			.map((stage) => {
-				const executionGroups = (stage.execution_groups || []).map((group) => {
-					const groupAgents = (group.runtime_agent_ids || [])
-						.map((agentId) => agentsById.get(agentId))
-						.filter(Boolean);
+				const executionGroups = (stage.execution_groups || [])
+					.map((group) => {
+						const groupAgents = (group.runtime_agent_ids || [])
+							.map((agentId) => agentsById.get(agentId))
+							.filter(Boolean);
 
-					return {
-						id: group.id,
-						name: group.name,
-						runtimeRoleKeys: group.runtime_role_keys || [],
-						agents: groupAgents,
-					};
-				}).filter((group) => group.agents.length > 0 || group.runtimeRoleKeys.length > 0);
+						return {
+							id: group.id,
+							name: group.name,
+							runtimeRoleKeys: group.runtime_role_keys || [],
+							agents: groupAgents,
+						};
+					})
+					.filter((group) => group.agents.length > 0 || group.runtimeRoleKeys.length > 0);
 
 				return {
 					id: stage.id,
@@ -363,21 +367,25 @@ function getWorkflowStagesForTesting(workflow) {
 		stageMap.get(stage).push(agent);
 	});
 
-	return [...stageMap.entries()].sort((a, b) => a[0] - b[0]).map(([stage, stageAgents]) => ({
-		id: `stage-${stage}`,
-		stage,
-		order: Number(stage) + 1,
-		name: `Execution Stage ${Number(stage) + 1}`,
-		summary: stageAgents.map((agent) => agent.name).join(" -> "),
-		executionGroups: [{
-			id: `group-stage-${stage}`,
-			name: stageAgents.length > 1 ? "Parallel execution" : "Sequential execution",
-			runtimeRoleKeys: stageAgents.map((agent) => deriveAgentRoleKey(agent)),
+	return [...stageMap.entries()]
+		.sort((a, b) => a[0] - b[0])
+		.map(([stage, stageAgents]) => ({
+			id: `stage-${stage}`,
+			stage,
+			order: Number(stage) + 1,
+			name: `Execution Stage ${Number(stage) + 1}`,
+			summary: stageAgents.map((agent) => agent.name).join(" -> "),
+			executionGroups: [
+				{
+					id: `group-stage-${stage}`,
+					name: stageAgents.length > 1 ? "Parallel execution" : "Sequential execution",
+					runtimeRoleKeys: stageAgents.map((agent) => deriveAgentRoleKey(agent)),
+					agents: stageAgents,
+				},
+			],
 			agents: stageAgents,
-		}],
-		agents: stageAgents,
-		isParallel: stageAgents.length > 1,
-	}));
+			isParallel: stageAgents.length > 1,
+		}));
 }
 
 function getWorkflowValidation(workflow) {
@@ -421,9 +429,10 @@ function updateTestModeNote() {
 	const noteEl = document.getElementById("test-mode-note");
 	if (!noteEl) return;
 
-	noteEl.textContent = dashboardMode === "real"
-		? "Real mode validates workflow readiness and shows scenario expectations. End-to-end live execution still happens in the Live tab."
-		: "Simulated mode runs scenario-based workflow checks. Design rules are enforced in the Design tab before save or push.";
+	noteEl.textContent =
+		dashboardMode === "real"
+			? "Real mode validates workflow readiness and shows scenario expectations. End-to-end live execution still happens in the Live tab."
+			: "Simulated mode runs scenario-based workflow checks. Design rules are enforced in the Design tab before save or push.";
 }
 
 function populateTestScenarioSelect() {
@@ -431,7 +440,9 @@ function populateTestScenarioSelect() {
 	if (!select) return;
 
 	const previousValue = select.value;
-	select.innerHTML = TEST_SCENARIOS.map((scenario) => `<option value="${scenario.id}">${scenario.name}</option>`).join("");
+	select.innerHTML = TEST_SCENARIOS.map((scenario) => `<option value="${scenario.id}">${scenario.name}</option>`).join(
+		"",
+	);
 	if (previousValue && TEST_SCENARIOS.some((scenario) => scenario.id === previousValue)) {
 		select.value = previousValue;
 	}
@@ -461,51 +472,60 @@ function renderTestWorkflowSummary(workflow) {
 		metaEl.textContent = "Create or load a workflow in Design to begin testing.";
 		readinessEl.innerHTML = '<span class="badge badge-fail">Blocked</span>';
 		readinessMetaEl.textContent = "A workflow is required before tests can run.";
-		checksEl.innerHTML = '<div class="test-check-item is-fail"><span class="badge badge-fail">[FAIL]</span><span>Add at least one agent in Design.</span></div>';
+		checksEl.innerHTML =
+			'<div class="test-check-item is-fail"><span class="badge badge-fail">[FAIL]</span><span>Add at least one agent in Design.</span></div>';
 		return;
 	}
 
 	const validation = getWorkflowValidation(normalizedWorkflow);
 	const stages = getWorkflowStagesForTesting(validation.workflow || workflow);
-	const totalTools = (normalizedWorkflow.agents || []).reduce((acc, agent) => acc + ((agent.tools || []).length), 0);
+	const totalTools = (normalizedWorkflow.agents || []).reduce((acc, agent) => acc + (agent.tools || []).length, 0);
 	const readinessLabel = validation.errors > 0 ? "Blocked" : validation.warnings > 0 ? "Ready with warnings" : "Ready";
 	const readinessBadge = validation.errors > 0 ? "badge-fail" : validation.warnings > 0 ? "badge-warn" : "badge-pass";
 
 	nameEl.textContent = normalizedWorkflow.name || "Untitled workflow";
 	metaEl.textContent = `${normalizedWorkflow.agents.length} execution agents • ${stages.length} contract stages • ${totalTools} tools`;
 	readinessEl.innerHTML = `<span class="badge ${readinessBadge}">${readinessLabel}</span>`;
-	readinessMetaEl.textContent = validation.errors > 0
-		? `${validation.errors} blocking errors must be fixed in Design.`
-		: validation.warnings > 0
-			? `${validation.warnings} warnings remain, but testing can continue.`
-			: "Workflow is structurally ready for scenario testing.";
+	readinessMetaEl.textContent =
+		validation.errors > 0
+			? `${validation.errors} blocking errors must be fixed in Design.`
+			: validation.warnings > 0
+				? `${validation.warnings} warnings remain, but testing can continue.`
+				: "Workflow is structurally ready for scenario testing.";
 
 	const findings = validation.findings.slice(0, 5);
 	let checksHtml = "";
 
 	if (findings.length > 0) {
-		checksHtml = findings.map((item) => `
+		checksHtml = findings
+			.map(
+				(item) => `
 			<div class="test-check-item is-${item.severity}">
 				<span class="badge ${item.severity === "error" ? "badge-fail" : item.severity === "warning" ? "badge-warn" : "badge-pass"}">[${item.severity === "error" ? "FAIL" : item.severity === "warning" ? "WARN" : "PASS"}]</span>
 				<span>${escapeHtmlApp(item.message)}</span>
 			</div>
-		`).join("");
+		`,
+			)
+			.join("");
 	} else {
-		checksHtml = '<div class="test-check-item is-pass"><span class="badge badge-pass">[PASS]</span><span>No blocking design issues were found.</span></div>';
+		checksHtml =
+			'<div class="test-check-item is-pass"><span class="badge badge-pass">[PASS]</span><span>No blocking design issues were found.</span></div>';
 	}
 
 	// In real mode, show live MCP server status
 	if (dashboardMode === "real" && liveToolRegistry && Array.isArray(liveToolRegistry)) {
-		checksHtml += liveToolRegistry.map((server) => {
-			const isOnline = server.status === "online";
-			const toolCount = (server.tools || []).length;
-			return `
+		checksHtml += liveToolRegistry
+			.map((server) => {
+				const isOnline = server.status === "online";
+				const toolCount = (server.tools || []).length;
+				return `
 				<div class="test-check-item is-${isOnline ? "pass" : "fail"}">
 					<span class="badge ${isOnline ? "badge-pass" : "badge-fail"}">[${isOnline ? "PASS" : "FAIL"}]</span>
 					<span>${escapeHtmlApp(server.name)}: ${isOnline ? "online" : "offline"} (${toolCount} tools)</span>
 				</div>
 			`;
-		}).join("");
+			})
+			.join("");
 	}
 
 	checksEl.innerHTML = checksHtml;
@@ -540,12 +560,16 @@ function updateScenarioDetails() {
 	}
 
 	if (expectedEl) {
-		expectedEl.innerHTML = scenario.expectations.map((expectation) => `
+		expectedEl.innerHTML = scenario.expectations
+			.map(
+				(expectation) => `
 			<div class="test-expected-item">
 				<span class="badge badge-info">[INFO]</span>
 				<span>${escapeHtmlApp(expectation)}</span>
 			</div>
-		`).join("");
+		`,
+			)
+			.join("");
 	}
 
 	renderTestWorkflowSummary(getActiveWorkflow());
@@ -575,7 +599,7 @@ async function evaluateWorkflowScenario(workflow, scenario) {
 	const effectiveWorkflow = validation.workflow || workflow;
 	const stages = getWorkflowStagesForTesting(effectiveWorkflow);
 	const assertions = [];
-	const totalTools = (effectiveWorkflow.agents || []).reduce((acc, agent) => acc + ((agent.tools || []).length), 0);
+	const totalTools = (effectiveWorkflow.agents || []).reduce((acc, agent) => acc + (agent.tools || []).length, 0);
 	const hasHuman = (effectiveWorkflow.agents || []).some((agent) => agent.kind === "human");
 	const isReal = dashboardMode === "real";
 
@@ -589,20 +613,26 @@ async function evaluateWorkflowScenario(workflow, scenario) {
 	assertions.push({
 		status: validation.errors === 0 ? "pass" : "fail",
 		label: "Design validation",
-		detail: validation.errors === 0
-			? (validation.warnings > 0 ? `${validation.warnings} warnings remain, but the design is testable.` : "No blocking design issues found.")
-			: `${validation.errors} blocking design issues prevent a clean run.`,
+		detail:
+			validation.errors === 0
+				? validation.warnings > 0
+					? `${validation.warnings} warnings remain, but the design is testable.`
+					: "No blocking design issues found."
+				: `${validation.errors} blocking design issues prevent a clean run.`,
 		timestamp: nowTs,
 	});
 
 	assertions.push({
 		status: totalTools > 0 ? "pass" : "warn",
 		label: "Tool coverage",
-		detail: totalTools > 0 ? `${totalTools} tools are assigned across the workflow.` : "No tools are assigned yet, so this test is only validating structure.",
+		detail:
+			totalTools > 0
+				? `${totalTools} tools are assigned across the workflow.`
+				: "No tools are assigned yet, so this test is only validating structure.",
 		timestamp: nowTs,
 	});
 
-	for (const capabilityId of (scenario.requiredCapabilities || [])) {
+	for (const capabilityId of scenario.requiredCapabilities || []) {
 		const rule = CAPABILITY_RULES[capabilityId];
 		if (!rule) continue;
 		const hasCapability = workflowHasCapability(effectiveWorkflow, capabilityId);
@@ -648,11 +678,15 @@ async function evaluateWorkflowScenario(workflow, scenario) {
 	}
 
 	assertions.push({
-		status: scenario.requiresHumanReview ? (hasHuman ? "pass" : "fail") : (hasHuman ? "warn" : "pass"),
+		status: scenario.requiresHumanReview ? (hasHuman ? "pass" : "fail") : hasHuman ? "warn" : "pass",
 		label: "Human checkpoint fit",
 		detail: scenario.requiresHumanReview
-			? (hasHuman ? "A human checkpoint exists for escalation-heavy review." : "This scenario expects a human checkpoint but none is defined.")
-			: (hasHuman ? "A human checkpoint exists even though this scenario should usually fast-track." : "Workflow can complete without mandatory human review."),
+			? hasHuman
+				? "A human checkpoint exists for escalation-heavy review."
+				: "This scenario expects a human checkpoint but none is defined."
+			: hasHuman
+				? "A human checkpoint exists even though this scenario should usually fast-track."
+				: "Workflow can complete without mandatory human review.",
 		timestamp: formatTestTimestamp(),
 	});
 
@@ -661,7 +695,9 @@ async function evaluateWorkflowScenario(workflow, scenario) {
 		assertions.push({
 			status: hasParallel ? "pass" : "warn",
 			label: "Parallel review fit",
-			detail: hasParallel ? "Workflow includes a parallel stage that can support specialist review." : "Workflow is fully sequential; it can still run, but high-risk review may be slower.",
+			detail: hasParallel
+				? "Workflow includes a parallel stage that can support specialist review."
+				: "Workflow is fully sequential; it can still run, but high-risk review may be slower.",
 			timestamp: formatTestTimestamp(),
 		});
 	}
@@ -710,7 +746,11 @@ async function evaluateWorkflowScenario(workflow, scenario) {
 
 function formatTestTimestamp() {
 	const now = new Date();
-	return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) + " " + now.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+	return (
+		now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) +
+		" " +
+		now.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+	);
 }
 
 function renderSingleScenarioResult(result) {
@@ -727,25 +767,37 @@ function renderSingleScenarioResult(result) {
 		<span style="margin-left:auto;font-size:12px;color:var(--color-text-tertiary)">${timestamp}</span>
 	`;
 
-	listEl.innerHTML = result.assertions.map((assertion) => `
+	listEl.innerHTML = result.assertions
+		.map(
+			(assertion) => `
 		<div class="test-result-item is-${assertion.status}">
 			<div class="test-result-label"><span class="badge ${getResultBadgeClass(assertion.status)}">[${assertion.status === "fail" ? "FAIL" : assertion.status === "warn" ? "WARN" : "PASS"}]</span><span>${escapeHtmlApp(assertion.label)}</span><span style="margin-left:auto;font-size:11px;color:var(--color-text-tertiary)">${escapeHtmlApp(assertion.timestamp || "")}</span></div>
 			<div class="test-result-detail">${escapeHtmlApp(assertion.detail)}</div>
 		</div>
-	`).join("");
+	`,
+		)
+		.join("");
 
 	traceEl.innerHTML = `
 		<div class="test-panel-title">Stage Trace</div>
 		<div class="test-stage-row">
-			${result.stages.map((stageInfo) => `
+			${result.stages
+				.map(
+					(stageInfo) => `
 				<div class="test-stage-chip ${stageInfo.isParallel ? "is-parallel" : ""}">
 					<div class="test-stage-chip-label">${escapeHtmlApp(stageInfo.name)}${stageInfo.isParallel ? " • Parallel" : ""}</div>
-					<div class="test-stage-chip-body">${stageInfo.executionGroups.map((group) => {
-						const groupAgents = group.agents.map((agent) => escapeHtmlApp(agent.name)).join(group.agents.length > 1 ? " + " : " -> ");
-						return groupAgents || escapeHtmlApp(group.name);
-					}).join(stageInfo.isParallel ? " | " : " -> ")}</div>
+					<div class="test-stage-chip-body">${stageInfo.executionGroups
+						.map((group) => {
+							const groupAgents = group.agents
+								.map((agent) => escapeHtmlApp(agent.name))
+								.join(group.agents.length > 1 ? " + " : " -> ");
+							return groupAgents || escapeHtmlApp(group.name);
+						})
+						.join(stageInfo.isParallel ? " | " : " -> ")}</div>
 				</div>
-			`).join("<div class=\"workflow-arrow\">&rarr;</div>")}
+			`,
+				)
+				.join('<div class="workflow-arrow">&rarr;</div>')}
 		</div>
 	`;
 }
@@ -769,17 +821,20 @@ function renderAggregateScenarioResults(results) {
 		<span style="margin-left:auto;font-size:12px;color:var(--color-text-tertiary)">${timestamp}</span>
 	`;
 
-	listEl.innerHTML = results.map((result) => {
-		const resultTs = result.assertions.length > 0 ? result.assertions[result.assertions.length - 1].timestamp : "";
-		return `
+	listEl.innerHTML = results
+		.map((result) => {
+			const resultTs = result.assertions.length > 0 ? result.assertions[result.assertions.length - 1].timestamp : "";
+			return `
 		<div class="test-result-item is-${result.verdict}">
 			<div class="test-result-label"><span class="badge ${getResultBadgeClass(result.verdict)}">${escapeHtmlApp(result.scenario.name)}</span><span>${result.passCount} passed • ${result.warnCount} warnings • ${result.failCount} failed</span><span style="margin-left:auto;font-size:11px;color:var(--color-text-tertiary)">${escapeHtmlApp(resultTs || "")}</span></div>
 			<div class="test-result-detail">${escapeHtmlApp(result.scenario.description)}</div>
 		</div>
 	`;
-	}).join("");
+		})
+		.join("");
 
-	traceEl.innerHTML = '<div class="test-result-detail">Run an individual scenario to inspect the stage-by-stage trace.</div>';
+	traceEl.innerHTML =
+		'<div class="test-result-detail">Run an individual scenario to inspect the stage-by-stage trace.</div>';
 }
 
 async function runSelectedTest() {
@@ -815,7 +870,8 @@ function clearTestResults() {
 
 	if (summaryEl) {
 		summaryEl.dataset.hasResults = "false";
-		summaryEl.innerHTML = '<span class="badge badge-info">Ready</span><span>Select a scenario and run a workflow test.</span>';
+		summaryEl.innerHTML =
+			'<span class="badge badge-info">Ready</span><span>Select a scenario and run a workflow test.</span>';
 	}
 
 	if (listEl) {
@@ -863,10 +919,12 @@ function syncDeployTab() {
 			});
 		});
 
-		tbody.innerHTML = wf.agents.map((agent) => {
-			const stageNames = stageNamesByAgentId.get(agent.id) || ["Unmapped"];
-			return `<tr><td>${escapeHtmlApp(agent.name)}</td><td style="font-family:var(--font-mono);font-size:12px">${escapeHtmlApp(agent.id || "--")}</td><td><span class="badge badge-info">Ready</span></td><td>${escapeHtmlApp(stageNames.join(", "))}</td></tr>`;
-		}).join("");
+		tbody.innerHTML = wf.agents
+			.map((agent) => {
+				const stageNames = stageNamesByAgentId.get(agent.id) || ["Unmapped"];
+				return `<tr><td>${escapeHtmlApp(agent.name)}</td><td style="font-family:var(--font-mono);font-size:12px">${escapeHtmlApp(agent.id || "--")}</td><td><span class="badge badge-info">Ready</span></td><td>${escapeHtmlApp(stageNames.join(", "))}</td></tr>`;
+			})
+			.join("");
 	}
 }
 
@@ -884,7 +942,7 @@ async function loadSampleContracts() {
 		const contracts = await resp.json();
 		// Clear existing options except placeholder
 		select.innerHTML = '<option value="">-- Select a contract --</option>';
-		contracts.forEach(function(c) {
+		contracts.forEach((c) => {
 			const opt = document.createElement("option");
 			opt.value = c.filename;
 			opt.textContent = c.filename;
@@ -952,14 +1010,14 @@ function syncLiveTab() {
 
 	// Agent color mapping
 	const agentColors = {
-		"intake": "var(--color-intake)",
-		"drafting": "#1d4ed8",
-		"extraction": "var(--color-extraction)",
-		"review": "#6d28d9",
-		"compliance": "var(--color-compliance)",
-		"negotiation": "#b45309",
-		"approval": "var(--color-approval)",
-		"human": "var(--color-approval)",
+		intake: "var(--color-intake)",
+		drafting: "#1d4ed8",
+		extraction: "var(--color-extraction)",
+		review: "#6d28d9",
+		compliance: "var(--color-compliance)",
+		negotiation: "#b45309",
+		approval: "var(--color-approval)",
+		human: "var(--color-approval)",
 	};
 
 	function getColor(agent) {
@@ -1018,7 +1076,9 @@ function getRoleDisplayName(roleKey) {
 	if (normalized === "negotiation") return "Negotiation";
 	if (normalized === "approval") return "Approval";
 	if (normalized === "human") return "Human review";
-	return normalized ? normalized.replace(/(^.|[-_ ]+.)/g, (match) => match.replace(/[-_ ]/, "").toUpperCase()) : "Unmapped";
+	return normalized
+		? normalized.replace(/(^.|[-_ ]+.)/g, (match) => match.replace(/[-_ ]/, "").toUpperCase())
+		: "Unmapped";
 }
 
 const liveStageFallbacks = {
@@ -1044,7 +1104,11 @@ function getLiveStageContextForRole(roleKey) {
 		});
 
 		if (matchingGroup) {
-			const primaryAgent = matchingGroup.agents?.[0] || stageInfo.agents?.find((agent) => deriveAgentRoleKey(agent) === normalizedRole) || stageInfo.agents?.[0] || null;
+			const primaryAgent =
+				matchingGroup.agents?.[0] ||
+				stageInfo.agents?.find((agent) => deriveAgentRoleKey(agent) === normalizedRole) ||
+				stageInfo.agents?.[0] ||
+				null;
 			return {
 				roleKey: normalizedRole,
 				stageName: stageInfo.name,
@@ -1056,7 +1120,10 @@ function getLiveStageContextForRole(roleKey) {
 		}
 	}
 
-	const fallback = liveStageFallbacks[normalizedRole] || { stageName: getRoleDisplayName(normalizedRole), nextStageName: null };
+	const fallback = liveStageFallbacks[normalizedRole] || {
+		stageName: getRoleDisplayName(normalizedRole),
+		nextStageName: null,
+	};
 	return {
 		roleKey: normalizedRole,
 		stageName: fallback.stageName,
@@ -1136,11 +1203,15 @@ function buildMonitorStageModels(workflow, monitorData) {
 	});
 
 	return stageViews.map((stageInfo) => {
-		const roleKeys = [...new Set(stageInfo.executionGroups.flatMap((group) => {
-			const fromGroups = group.runtimeRoleKeys || [];
-			const fromAgents = (group.agents || []).map((agent) => deriveAgentRoleKey(agent));
-			return [...fromGroups, ...fromAgents].map((key) => normalizeRoleKey(key)).filter(Boolean);
-		}))];
+		const roleKeys = [
+			...new Set(
+				stageInfo.executionGroups.flatMap((group) => {
+					const fromGroups = group.runtimeRoleKeys || [];
+					const fromAgents = (group.agents || []).map((agent) => deriveAgentRoleKey(agent));
+					return [...fromGroups, ...fromAgents].map((key) => normalizeRoleKey(key)).filter(Boolean);
+				}),
+			),
+		];
 
 		const roleTelemetry = roleKeys.map((roleKey) => {
 			const runtimeMetric = roleMetrics.get(roleKey);
@@ -1157,12 +1228,15 @@ function buildMonitorStageModels(workflow, monitorData) {
 			return roleKeys.includes(entryRole) || (entryRole === "human" && roleKeys.includes("approval"));
 		});
 
-		const totals = roleTelemetry.reduce((acc, metric) => ({
-			latency_ms: acc.latency_ms + (metric.latency_ms || 0),
-			tokens_in: acc.tokens_in + (metric.tokens_in || 0),
-			tokens_out: acc.tokens_out + (metric.tokens_out || 0),
-			cost: acc.cost + (metric.cost || 0),
-		}), { latency_ms: 0, tokens_in: 0, tokens_out: 0, cost: 0 });
+		const totals = roleTelemetry.reduce(
+			(acc, metric) => ({
+				latency_ms: acc.latency_ms + (metric.latency_ms || 0),
+				tokens_in: acc.tokens_in + (metric.tokens_in || 0),
+				tokens_out: acc.tokens_out + (metric.tokens_out || 0),
+				cost: acc.cost + (metric.cost || 0),
+			}),
+			{ latency_ms: 0, tokens_in: 0, tokens_out: 0, cost: 0 },
+		);
 
 		return {
 			...stageInfo,
@@ -1208,21 +1282,31 @@ function renderMonitorStageMap(monitorData) {
 
 	const traceTree = document.querySelector(".trace-tree");
 	if (traceTree) {
-		traceTree.innerHTML = stageModels.map((stageInfo) => {
-			const stageBadge = stageInfo.totals.latency_ms > 0 ? "badge-pass" : "badge-info";
-			const stageStatus = stageInfo.totals.latency_ms > 0 ? "ACTIVE" : (dashboardMode === "real" ? "MAPPED" : "SIMULATED");
-			const groupLines = stageInfo.executionGroups.map((group) => {
-				const members = group.agents.map((agent) => escapeHtmlApp(agent.name)).join(group.agents.length > 1 ? " + " : " -> ");
-				return `<div class="trace-tool"><span class="trace-tool-time">map</span>${escapeHtmlApp(group.name)} <span class="badge badge-info">[MAP]</span></div><div class="trace-tool trace-tool-detail">${members || escapeHtmlApp(group.name)}</div>`;
-			}).join("");
-			const telemetryLines = stageInfo.roleTelemetry.map((metric) => {
-				const metricBadge = metric.latency_ms > 0 || metric.tokens_in > 0 ? "badge-pass" : "badge-info";
-				const metricLabel = metric.latency_ms > 0 || metric.tokens_in > 0 ? "LIVE" : (dashboardMode === "real" ? "WAIT" : "SIM");
-				return `<div class="trace-tool"><span class="trace-tool-time">${formatLatencyMs(metric.latency_ms)}</span>${escapeHtmlApp(metric.displayName)} <span class="badge ${metricBadge}">[${metricLabel}]</span></div><div class="trace-tool trace-tool-detail">${metric.tokens_in.toLocaleString()} in / ${metric.tokens_out.toLocaleString()} out / $${metric.cost.toFixed(4)}</div>`;
-			}).join("");
+		traceTree.innerHTML = stageModels
+			.map((stageInfo) => {
+				const stageBadge = stageInfo.totals.latency_ms > 0 ? "badge-pass" : "badge-info";
+				const stageStatus =
+					stageInfo.totals.latency_ms > 0 ? "ACTIVE" : dashboardMode === "real" ? "MAPPED" : "SIMULATED";
+				const groupLines = stageInfo.executionGroups
+					.map((group) => {
+						const members = group.agents
+							.map((agent) => escapeHtmlApp(agent.name))
+							.join(group.agents.length > 1 ? " + " : " -> ");
+						return `<div class="trace-tool"><span class="trace-tool-time">map</span>${escapeHtmlApp(group.name)} <span class="badge badge-info">[MAP]</span></div><div class="trace-tool trace-tool-detail">${members || escapeHtmlApp(group.name)}</div>`;
+					})
+					.join("");
+				const telemetryLines = stageInfo.roleTelemetry
+					.map((metric) => {
+						const metricBadge = metric.latency_ms > 0 || metric.tokens_in > 0 ? "badge-pass" : "badge-info";
+						const metricLabel =
+							metric.latency_ms > 0 || metric.tokens_in > 0 ? "LIVE" : dashboardMode === "real" ? "WAIT" : "SIM";
+						return `<div class="trace-tool"><span class="trace-tool-time">${formatLatencyMs(metric.latency_ms)}</span>${escapeHtmlApp(metric.displayName)} <span class="badge ${metricBadge}">[${metricLabel}]</span></div><div class="trace-tool trace-tool-detail">${metric.tokens_in.toLocaleString()} in / ${metric.tokens_out.toLocaleString()} out / $${metric.cost.toFixed(4)}</div>`;
+					})
+					.join("");
 
-			return `<div class="trace-agent"><div class="trace-agent-header" onclick="toggleTrace(this)"><span class="trace-toggle">[-]</span><span class="trace-agent-name" style="color:${getStageAccentColor(stageInfo)}">${escapeHtmlApp(stageInfo.name)}</span><span class="trace-agent-time">${formatLatencyMs(stageInfo.totals.latency_ms)}</span></div><div class="trace-tools"><div class="trace-tool"><span class="trace-tool-time">stage</span>${escapeHtmlApp(stageInfo.summary || "Mapped contract stage execution")} <span class="badge ${stageBadge}">[${stageStatus}]</span></div>${groupLines}${telemetryLines}</div></div>`;
-		}).join("");
+				return `<div class="trace-agent"><div class="trace-agent-header" onclick="toggleTrace(this)"><span class="trace-toggle">[-]</span><span class="trace-agent-name" style="color:${getStageAccentColor(stageInfo)}">${escapeHtmlApp(stageInfo.name)}</span><span class="trace-agent-time">${formatLatencyMs(stageInfo.totals.latency_ms)}</span></div><div class="trace-tools"><div class="trace-tool"><span class="trace-tool-time">stage</span>${escapeHtmlApp(stageInfo.summary || "Mapped contract stage execution")} <span class="badge ${stageBadge}">[${stageStatus}]</span></div>${groupLines}${telemetryLines}</div></div>`;
+			})
+			.join("");
 	}
 
 	const latencyContainer = document.getElementById("latency-bars");
@@ -1230,14 +1314,22 @@ function renderMonitorStageMap(monitorData) {
 		latencyContainer.innerHTML = "";
 		const maxLatency = Math.max(...stageModels.map((stageInfo) => stageInfo.totals.latency_ms), 0);
 		stageModels.forEach((stageInfo) => {
-			const pct = maxLatency > 0 ? Math.max(Math.round((stageInfo.totals.latency_ms / maxLatency) * 100), stageInfo.totals.latency_ms > 0 ? 8 : 0) : 0;
-			const speedClass = stageInfo.totals.latency_ms < 2000 ? "fast" : stageInfo.totals.latency_ms < 4000 ? "medium" : "slow";
+			const pct =
+				maxLatency > 0
+					? Math.max(
+							Math.round((stageInfo.totals.latency_ms / maxLatency) * 100),
+							stageInfo.totals.latency_ms > 0 ? 8 : 0,
+						)
+					: 0;
+			const speedClass =
+				stageInfo.totals.latency_ms < 2000 ? "fast" : stageInfo.totals.latency_ms < 4000 ? "medium" : "slow";
 			const bar = document.createElement("div");
 			bar.className = "latency-bar";
 			bar.innerHTML = `<div class="latency-label">${escapeHtmlApp(stageInfo.name)}</div><div class="latency-fill-wrapper"><div class="latency-fill ${speedClass}" style="width:${pct}%"></div></div><div class="latency-time">${formatLatencyMs(stageInfo.totals.latency_ms)}</div>`;
 			latencyContainer.appendChild(bar);
 		});
-		const totalLatency = monitorData?.totals?.latency_ms ?? stageModels.reduce((sum, stageInfo) => sum + stageInfo.totals.latency_ms, 0);
+		const totalLatency =
+			monitorData?.totals?.latency_ms ?? stageModels.reduce((sum, stageInfo) => sum + stageInfo.totals.latency_ms, 0);
 		const totalDiv = document.createElement("div");
 		totalDiv.style.cssText = "margin-top:12px;font-size:13px;color:var(--color-text-tertiary)";
 		totalDiv.textContent = `Total: ${formatLatencyMs(totalLatency)} (${dashboardMode === "real" ? "live telemetry" : "simulated contract-stage flow"})`;
@@ -1246,14 +1338,21 @@ function renderMonitorStageMap(monitorData) {
 
 	const tokenBody = document.getElementById("token-usage-body");
 	if (tokenBody) {
-		tokenBody.innerHTML = stageModels.map((stageInfo) => {
-			return `<tr><td>${escapeHtmlApp(stageInfo.name)}</td><td>${stageInfo.totals.tokens_in.toLocaleString()}</td><td>${stageInfo.totals.tokens_out.toLocaleString()}</td><td>$${stageInfo.totals.cost.toFixed(4)}</td></tr>`;
-		}).join("");
-		const totals = monitorData?.totals || stageModels.reduce((acc, stageInfo) => ({
-			tokens_in: acc.tokens_in + stageInfo.totals.tokens_in,
-			tokens_out: acc.tokens_out + stageInfo.totals.tokens_out,
-			cost: acc.cost + stageInfo.totals.cost,
-		}), { tokens_in: 0, tokens_out: 0, cost: 0 });
+		tokenBody.innerHTML = stageModels
+			.map((stageInfo) => {
+				return `<tr><td>${escapeHtmlApp(stageInfo.name)}</td><td>${stageInfo.totals.tokens_in.toLocaleString()}</td><td>${stageInfo.totals.tokens_out.toLocaleString()}</td><td>$${stageInfo.totals.cost.toFixed(4)}</td></tr>`;
+			})
+			.join("");
+		const totals =
+			monitorData?.totals ||
+			stageModels.reduce(
+				(acc, stageInfo) => ({
+					tokens_in: acc.tokens_in + stageInfo.totals.tokens_in,
+					tokens_out: acc.tokens_out + stageInfo.totals.tokens_out,
+					cost: acc.cost + stageInfo.totals.cost,
+				}),
+				{ tokens_in: 0, tokens_out: 0, cost: 0 },
+			);
 		tokenBody.innerHTML += `<tr style="font-weight:600"><td>Total</td><td>${totals.tokens_in.toLocaleString()}</td><td>${totals.tokens_out.toLocaleString()}</td><td>$${Number(totals.cost || 0).toFixed(4)}</td></tr>`;
 	}
 
@@ -1264,14 +1363,20 @@ function renderMonitorStageMap(monitorData) {
 			if (stageInfo.auditEntries.length > 0) {
 				stageInfo.auditEntries.forEach((entry) => {
 					const time = entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString() : "--";
-					auditRows.push(`<tr><td>${time}</td><td>${escapeHtmlApp(stageInfo.name)}</td><td>${escapeHtmlApp(entry.action || "--")}</td><td>${escapeHtmlApp(entry.reasoning || getRoleDisplayName(entry.agent))}</td></tr>`);
+					auditRows.push(
+						`<tr><td>${time}</td><td>${escapeHtmlApp(stageInfo.name)}</td><td>${escapeHtmlApp(entry.action || "--")}</td><td>${escapeHtmlApp(entry.reasoning || getRoleDisplayName(entry.agent))}</td></tr>`,
+					);
 				});
 			} else if (dashboardMode !== "real") {
-				auditRows.push(`<tr><td>--</td><td>${escapeHtmlApp(stageInfo.name)}</td><td>Mapped to execution group</td><td>${escapeHtmlApp(stageInfo.executionGroups.map((group) => group.name).join(" | "))}</td></tr>`);
+				auditRows.push(
+					`<tr><td>--</td><td>${escapeHtmlApp(stageInfo.name)}</td><td>Mapped to execution group</td><td>${escapeHtmlApp(stageInfo.executionGroups.map((group) => group.name).join(" | "))}</td></tr>`,
+				);
 			}
 		});
 
-		auditBody.innerHTML = auditRows.join("") || `<tr><td colspan="4" style="color:var(--color-text-disabled);text-align:center;padding:24px">Awaiting runtime audit events for the active contract stages.</td></tr>`;
+		auditBody.innerHTML =
+			auditRows.join("") ||
+			`<tr><td colspan="4" style="color:var(--color-text-disabled);text-align:center;padding:24px">Awaiting runtime audit events for the active contract stages.</td></tr>`;
 	}
 }
 
@@ -1296,7 +1401,11 @@ function syncMonitorTab() {
 function renderLiveNode(agent, color) {
 	const nodeId = getAgentNodeId(agent);
 	const roleKey = deriveAgentRoleKey(agent);
-	const roleLabel = roleKey ? roleKey.replace(/^./, (c) => c.toUpperCase()) : (agent.kind ? String(agent.kind).replace(/^./, (c) => c.toUpperCase()) : "Agent");
+	const roleLabel = roleKey
+		? roleKey.replace(/^./, (c) => c.toUpperCase())
+		: agent.kind
+			? String(agent.kind).replace(/^./, (c) => c.toUpperCase())
+			: "Agent";
 	return `
 		<div class="workflow-node" id="${nodeId}">
 			<div class="workflow-node-name">${escapeHtmlApp(agent.name)}</div>
@@ -1313,7 +1422,7 @@ function renderLiveNode(agent, color) {
 function escapeHtmlApp(str) {
 	if (typeof str !== "string") return "";
 	const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
-	return str.replace(/[&<>"']/g, c => map[c]);
+	return str.replace(/[&<>"']/g, (c) => map[c]);
 }
 
 // --- View 3: Deploy Pipeline ---
@@ -1333,17 +1442,20 @@ function runDeployPipeline() {
 
 	// Use active workflow agents if available, else fallback to defaults
 	const wf = getActiveWorkflow();
-	const agents = (wf && wf.agents && wf.agents.length > 0)
-		? wf.agents.sort((a, b) => a.order - b.order).map((a, i) => ({
-			name: a.name,
-			id: `agt-${(wf.id || "7f3a").substring(0, 4)}-${a.name.toLowerCase().replace(/\s+/g, "-").substring(0, 8)}-${String(i + 1).padStart(3, "0")}`,
-		}))
-		: [
-			{ name: "Intake Agent", id: "agt-7f3a-intake-001" },
-			{ name: "Extraction Agent", id: "agt-7f3a-extract-002" },
-			{ name: "Compliance Agent", id: "agt-7f3a-comply-003" },
-			{ name: "Approval Agent", id: "agt-7f3a-approve-004" },
-		];
+	const agents =
+		wf && wf.agents && wf.agents.length > 0
+			? wf.agents
+					.sort((a, b) => a.order - b.order)
+					.map((a, i) => ({
+						name: a.name,
+						id: `agt-${(wf.id || "7f3a").substring(0, 4)}-${a.name.toLowerCase().replace(/\s+/g, "-").substring(0, 8)}-${String(i + 1).padStart(3, "0")}`,
+					}))
+			: [
+					{ name: "Intake Agent", id: "agt-7f3a-intake-001" },
+					{ name: "Extraction Agent", id: "agt-7f3a-extract-002" },
+					{ name: "Compliance Agent", id: "agt-7f3a-comply-003" },
+					{ name: "Approval Agent", id: "agt-7f3a-approve-004" },
+				];
 
 	stages.forEach((stage, i) => {
 		setTimeout(
@@ -1424,7 +1536,17 @@ function startWorkflow() {
 
 	// Derive contract type from filename for simulated mode
 	const fn = contractFilename.toUpperCase();
-	const simType = fn.includes("NDA") ? "NDA" : fn.includes("MSA") ? "MSA" : fn.includes("SOW") ? "SOW" : fn.includes("SLA") ? "SLA" : fn.includes("AMEND") ? "Amendment" : "Contract";
+	const simType = fn.includes("NDA")
+		? "NDA"
+		: fn.includes("MSA")
+			? "MSA"
+			: fn.includes("SOW")
+				? "SOW"
+				: fn.includes("SLA")
+					? "SLA"
+					: fn.includes("AMEND")
+						? "Amendment"
+						: "Contract";
 
 	const timeline = [
 		// Stage 1: Request and Initiation (Intake Agent)
@@ -1459,7 +1581,11 @@ function startWorkflow() {
 			time: 2300,
 			action: () => {
 				setNodeState(intakeStage.nodeId, "complete", "Complete (1.2s)");
-				addLog("10:04:03", intakeStage.stageName, `[PASS] Complete. Next: ${intakeStage.nextStageName || draftingStage.stageName}`);
+				addLog(
+					"10:04:03",
+					intakeStage.stageName,
+					`[PASS] Complete. Next: ${intakeStage.nextStageName || draftingStage.stageName}`,
+				);
 			},
 		},
 		// Stage 2: Authoring and Drafting (Drafting Agent)
@@ -1499,7 +1625,11 @@ function startWorkflow() {
 			time: 5200,
 			action: () => {
 				setNodeState(draftingStage.nodeId, "complete", "Complete (2.2s)");
-				addLog("10:04:05", draftingStage.stageName, `[PASS] Complete. Next: ${draftingStage.nextStageName || reviewStage.stageName}`);
+				addLog(
+					"10:04:05",
+					draftingStage.stageName,
+					`[PASS] Complete. Next: ${draftingStage.nextStageName || reviewStage.stageName}`,
+				);
 			},
 		},
 		// Stage 3: Internal Review (Internal Review Agent)
@@ -1531,7 +1661,11 @@ function startWorkflow() {
 			time: 7300,
 			action: () => {
 				setNodeState(reviewStage.nodeId, "complete", "Complete (1.8s)");
-				addLog("10:04:07", reviewStage.stageName, `[PASS] Complete. Next: ${reviewStage.nextStageName || complianceStage.stageName}`);
+				addLog(
+					"10:04:07",
+					reviewStage.stageName,
+					`[PASS] Complete. Next: ${reviewStage.nextStageName || complianceStage.stageName}`,
+				);
 			},
 		},
 		// Stage 4: Compliance Check (Compliance Agent)
@@ -1564,7 +1698,11 @@ function startWorkflow() {
 			time: 9500,
 			action: () => {
 				setNodeState(complianceStage.nodeId, "warning", "2 flags (1.5s)");
-				addLog("10:04:09", complianceStage.stageName, `[WARN] Complete. 2 flags raised. Next: ${complianceStage.nextStageName || negotiationStage.stageName}`);
+				addLog(
+					"10:04:09",
+					complianceStage.stageName,
+					`[WARN] Complete. 2 flags raised. Next: ${complianceStage.nextStageName || negotiationStage.stageName}`,
+				);
 			},
 		},
 		// Stage 5: Negotiation (Negotiation Agent)
@@ -1596,7 +1734,11 @@ function startWorkflow() {
 			time: 11700,
 			action: () => {
 				setNodeState(negotiationStage.nodeId, "complete", "Complete (2.0s)");
-				addLog("10:04:11", negotiationStage.stageName, `[PASS] Complete. Next: ${negotiationStage.nextStageName || approvalStage.stageName}`);
+				addLog(
+					"10:04:11",
+					negotiationStage.stageName,
+					`[PASS] Complete. Next: ${negotiationStage.nextStageName || approvalStage.stageName}`,
+				);
 			},
 		},
 		// Stage 6: Approval Routing (Approval Agent)

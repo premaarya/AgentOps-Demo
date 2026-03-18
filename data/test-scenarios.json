@@ -1,87 +1,87 @@
 [
-  {
-    "id": "nda-standard",
-    "name": "Standard NDA",
-    "description": "Check that the workflow can classify a low-risk NDA, draft approved clause language, review internally, check compliance, negotiate terms, and complete approval.",
-    "inputSummary": "Acme and Beta mutual NDA with confidentiality, parties, effective date, and a standard 2-year term.",
-    "expectations": [
-      "Intake should classify a confidentiality-heavy agreement.",
-      "Drafting should assemble a draft package with approved clause language.",
-      "Internal Review should summarize redlines and review comments.",
-      "Compliance should verify terms against company policies.",
-      "Negotiation should assess counterparty positions.",
-      "Approval should complete without mandatory human escalation."
-    ],
-    "requiredCapabilities": ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
-    "requiresHumanReview": false,
-    "prefersParallel": false
-  },
-  {
-    "id": "msa-high-risk",
-    "name": "High-Risk MSA",
-    "description": "Stress the workflow with a risky master services agreement that should trigger full review, compliance flags, negotiation support, and human approval.",
-    "inputSummary": "Enterprise MSA with high liability cap, auto-renewal, cross-border data transfer, and aggressive termination language.",
-    "expectations": [
-      "Intake should classify the agreement as high-risk.",
-      "Drafting should recommend fallback language for aggressive clauses.",
-      "Internal Review should flag redlined sections for discussion.",
-      "Compliance should review policy-sensitive clauses.",
-      "Negotiation should recommend fallback positions for counterparty markup.",
-      "Approval should escalate to a human checkpoint."
-    ],
-    "requiredCapabilities": ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
-    "requiresHumanReview": true,
-    "prefersParallel": true
-  },
-  {
-    "id": "amendment-fast-track",
-    "name": "Amendment Fast Track",
-    "description": "Validate a short amendment path that exercises all 6 stages with a lightweight pass through each.",
-    "inputSummary": "Short data-policy amendment updating only retention terms and notice contacts.",
-    "expectations": [
-      "Intake should identify this as a small delta review.",
-      "Drafting should assemble the changed clause package.",
-      "Internal Review should confirm minimal redlines.",
-      "Compliance should verify the retention term change.",
-      "Negotiation should confirm no counterparty objections.",
-      "Approval path should remain lightweight."
-    ],
-    "requiredCapabilities": ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
-    "requiresHumanReview": false,
-    "prefersParallel": false
-  },
-  {
-    "id": "sow-cloud-migration",
-    "name": "SOW Cloud Migration",
-    "description": "Process a multi-phase cloud migration SOW with defined deliverables, payment milestones, and acceptance criteria.",
-    "inputSummary": "Cloud migration SOW with 4 phases, $285K fee, 12-week timeline, and specific acceptance criteria for Azure migration.",
-    "expectations": [
-      "Intake should classify as a SOW with defined scope and timeline.",
-      "Drafting should validate deliverable and payment schedule clauses.",
-      "Internal Review should confirm milestone alignment.",
-      "Compliance should verify fee structure and change management terms.",
-      "Negotiation should review acceptance criteria and warranty language.",
-      "Approval should route based on contract value threshold."
-    ],
-    "requiredCapabilities": ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
-    "requiresHumanReview": false,
-    "prefersParallel": false
-  },
-  {
-    "id": "sla-uptime",
-    "name": "SLA Uptime Agreement",
-    "description": "Validate processing of an infrastructure uptime SLA with service level targets, credit mechanisms, and escalation procedures.",
-    "inputSummary": "Infrastructure SLA with 99.9% uptime target, tiered service credits, and defined escalation matrix.",
-    "expectations": [
-      "Intake should classify as an SLA with measurable service levels.",
-      "Drafting should structure uptime commitments and credit schedules.",
-      "Internal Review should verify credit calculation methodology.",
-      "Compliance should check SLA targets against internal standards.",
-      "Negotiation should assess credit cap and exclusion terms.",
-      "Approval should confirm escalation procedures are adequate."
-    ],
-    "requiredCapabilities": ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
-    "requiresHumanReview": false,
-    "prefersParallel": false
-  }
+	{
+		"id": "nda-standard",
+		"name": "Standard NDA",
+		"description": "Check that the workflow can classify a low-risk NDA, draft approved clause language, review internally, check compliance, negotiate terms, and complete approval.",
+		"inputSummary": "Acme and Beta mutual NDA with confidentiality, parties, effective date, and a standard 2-year term.",
+		"expectations": [
+			"Intake should classify a confidentiality-heavy agreement.",
+			"Drafting should assemble a draft package with approved clause language.",
+			"Internal Review should summarize redlines and review comments.",
+			"Compliance should verify terms against company policies.",
+			"Negotiation should assess counterparty positions.",
+			"Approval should complete without mandatory human escalation."
+		],
+		"requiredCapabilities": ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
+		"requiresHumanReview": false,
+		"prefersParallel": false
+	},
+	{
+		"id": "msa-high-risk",
+		"name": "High-Risk MSA",
+		"description": "Stress the workflow with a risky master services agreement that should trigger full review, compliance flags, negotiation support, and human approval.",
+		"inputSummary": "Enterprise MSA with high liability cap, auto-renewal, cross-border data transfer, and aggressive termination language.",
+		"expectations": [
+			"Intake should classify the agreement as high-risk.",
+			"Drafting should recommend fallback language for aggressive clauses.",
+			"Internal Review should flag redlined sections for discussion.",
+			"Compliance should review policy-sensitive clauses.",
+			"Negotiation should recommend fallback positions for counterparty markup.",
+			"Approval should escalate to a human checkpoint."
+		],
+		"requiredCapabilities": ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
+		"requiresHumanReview": true,
+		"prefersParallel": true
+	},
+	{
+		"id": "amendment-fast-track",
+		"name": "Amendment Fast Track",
+		"description": "Validate a short amendment path that exercises all 6 stages with a lightweight pass through each.",
+		"inputSummary": "Short data-policy amendment updating only retention terms and notice contacts.",
+		"expectations": [
+			"Intake should identify this as a small delta review.",
+			"Drafting should assemble the changed clause package.",
+			"Internal Review should confirm minimal redlines.",
+			"Compliance should verify the retention term change.",
+			"Negotiation should confirm no counterparty objections.",
+			"Approval path should remain lightweight."
+		],
+		"requiredCapabilities": ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
+		"requiresHumanReview": false,
+		"prefersParallel": false
+	},
+	{
+		"id": "sow-cloud-migration",
+		"name": "SOW Cloud Migration",
+		"description": "Process a multi-phase cloud migration SOW with defined deliverables, payment milestones, and acceptance criteria.",
+		"inputSummary": "Cloud migration SOW with 4 phases, $285K fee, 12-week timeline, and specific acceptance criteria for Azure migration.",
+		"expectations": [
+			"Intake should classify as a SOW with defined scope and timeline.",
+			"Drafting should validate deliverable and payment schedule clauses.",
+			"Internal Review should confirm milestone alignment.",
+			"Compliance should verify fee structure and change management terms.",
+			"Negotiation should review acceptance criteria and warranty language.",
+			"Approval should route based on contract value threshold."
+		],
+		"requiredCapabilities": ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
+		"requiresHumanReview": false,
+		"prefersParallel": false
+	},
+	{
+		"id": "sla-uptime",
+		"name": "SLA Uptime Agreement",
+		"description": "Validate processing of an infrastructure uptime SLA with service level targets, credit mechanisms, and escalation procedures.",
+		"inputSummary": "Infrastructure SLA with 99.9% uptime target, tiered service credits, and defined escalation matrix.",
+		"expectations": [
+			"Intake should classify as an SLA with measurable service levels.",
+			"Drafting should structure uptime commitments and credit schedules.",
+			"Internal Review should verify credit calculation methodology.",
+			"Compliance should check SLA targets against internal standards.",
+			"Negotiation should assess credit cap and exclusion terms.",
+			"Approval should confirm escalation procedures are adequate."
+		],
+		"requiredCapabilities": ["intake", "drafting", "review", "compliance", "negotiation", "approval"],
+		"requiresHumanReview": false,
+		"prefersParallel": false
+	}
 ]

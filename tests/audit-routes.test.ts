@@ -1,8 +1,12 @@
 import Fastify from "fastify";
 import { describe, expect, it } from "vitest";
-import { auditRoutes } from "../gateway/src/routes/audit.js";
 import { storeTraces } from "../gateway/src/orchestrator/pipeline.js";
-import { activateWorkflowDefinition, initWorkflowRegistry, saveWorkflowDefinition } from "../gateway/src/services/workflowRegistry.js";
+import { auditRoutes } from "../gateway/src/routes/audit.js";
+import {
+	activateWorkflowDefinition,
+	initWorkflowRegistry,
+	saveWorkflowDefinition,
+} from "../gateway/src/services/workflowRegistry.js";
 import { auditStore, contractStore, initStores } from "../gateway/src/stores/contractStore.js";
 import type { Contract, ILlmAdapter, LlmRequest, LlmResponse, WebSocketEvent } from "../gateway/src/types.js";
 
@@ -146,28 +150,34 @@ describe("audit routes", () => {
 
 		const payload = response.json();
 		expect(payload.stage_map_reference).toBe("config/stages/contract-lifecycle.json");
-		expect(payload.agents).toEqual(expect.arrayContaining([
-			expect.objectContaining({ agent: "intake", tokens_in: 100, tokens_out: 40, latency_ms: 1200 }),
-			expect.objectContaining({ agent: "approval", tokens_in: 50, tokens_out: 20, latency_ms: 300 }),
-		]));
-		expect(payload.contract_stages).toEqual(expect.arrayContaining([
-			expect.objectContaining({
-				id: "request-initiation",
-				name: "Request and Initiation",
-				tokens_in: 100,
-				tokens_out: 40,
-				latency_ms: 1200,
-			}),
-			expect.objectContaining({
-				id: "approval-routing",
-				name: "Approval Routing",
-				tokens_in: 50,
-				tokens_out: 20,
-				latency_ms: 300,
-				audit_trail: [expect.objectContaining({ action: "escalated", reasoning: "Requires human review" })],
-			}),
-		]));
-		expect(payload.contract_stages.find((stage: { id: string; }) => stage.id === "approval-routing")?.execution_groups[0]).toMatchObject({
+		expect(payload.agents).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ agent: "intake", tokens_in: 100, tokens_out: 40, latency_ms: 1200 }),
+				expect.objectContaining({ agent: "approval", tokens_in: 50, tokens_out: 20, latency_ms: 300 }),
+			]),
+		);
+		expect(payload.contract_stages).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					id: "request-initiation",
+					name: "Request and Initiation",
+					tokens_in: 100,
+					tokens_out: 40,
+					latency_ms: 1200,
+				}),
+				expect.objectContaining({
+					id: "approval-routing",
+					name: "Approval Routing",
+					tokens_in: 50,
+					tokens_out: 20,
+					latency_ms: 300,
+					audit_trail: [expect.objectContaining({ action: "escalated", reasoning: "Requires human review" })],
+				}),
+			]),
+		);
+		expect(
+			payload.contract_stages.find((stage: { id: string }) => stage.id === "approval-routing")?.execution_groups[0],
+		).toMatchObject({
 			id: "group-approval-routing",
 			runtime_role_keys: ["approval"],
 			tokens_in: 50,

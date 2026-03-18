@@ -53,10 +53,18 @@ function buildContractStageTelemetry(contractId: string) {
 			};
 		});
 
-		const stageRoleKeys = [...new Set(executionGroups.flatMap((group) => group.runtime_role_keys.map((roleKey) => normalizeRoleKey(roleKey))))];
+		const stageRoleKeys = [
+			...new Set(
+				executionGroups.flatMap((group) => group.runtime_role_keys.map((roleKey) => normalizeRoleKey(roleKey))),
+			),
+		];
 		const stageTraces = traces.filter((trace) => stageRoleKeys.includes(normalizeRoleKey(trace.agent)));
 		const stageAuditEntries = auditEntries
-			.filter((entry) => stageRoleKeys.includes(normalizeRoleKey(entry.agent)) || (normalizeRoleKey(entry.agent) === "human" && stageRoleKeys.includes("approval")))
+			.filter(
+				(entry) =>
+					stageRoleKeys.includes(normalizeRoleKey(entry.agent)) ||
+					(normalizeRoleKey(entry.agent) === "human" && stageRoleKeys.includes("approval")),
+			)
 			.map((entry) => ({
 				timestamp: entry.timestamp,
 				agent: entry.agent,
@@ -108,7 +116,9 @@ export async function auditRoutes(app: FastifyInstance): Promise<void> {
 		const contract = contractStore.getById(contractId);
 		const activePackage = getActiveWorkflowPackage();
 
-		const agents = [...new Set((activePackage?.agents ?? []).map((agent) => agent.runtime_role_key || agent.id).filter(Boolean))];
+		const agents = [
+			...new Set((activePackage?.agents ?? []).map((agent) => agent.runtime_role_key || agent.id).filter(Boolean)),
+		];
 		const monitoredAgents = agents.length > 0 ? agents : ["intake", "extraction", "compliance", "approval"];
 		const agentCosts = monitoredAgents.map((agent) => {
 			const agentTraces = traces.filter((t) => t.agent === agent);

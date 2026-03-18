@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { appConfig } from "../config.js";
+import { getFoundryConfigurationError, isFoundryConfigured } from "../services/foundryAuth.js";
 import {
 	type DeployPipelineResult,
 	type FoundryDeployConfig,
@@ -7,7 +8,6 @@ import {
 	deploySimulated,
 	deployToFoundry,
 } from "../services/foundryDeploy.js";
-import { getFoundryConfigurationError, isFoundryConfigured } from "../services/foundryAuth.js";
 
 // Track last deployment for cleanup
 let lastDeployment: DeployPipelineResult | null = null;

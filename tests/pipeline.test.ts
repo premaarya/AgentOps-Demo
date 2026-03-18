@@ -69,10 +69,10 @@ describe("pipeline integration", () => {
 
 		expect(result.contract).toBeDefined();
 		expect(result.contract.id).toMatch(/^contract-/);
-		expect(result.traces.length).toBe(4);
+		expect(result.traces.length).toBe(6);
 
 		const agents = result.traces.map((t) => t.agent);
-		expect(agents).toEqual(["intake", "extraction", "compliance", "approval"]);
+		expect(agents).toEqual(["intake", "extraction", "review", "compliance", "negotiation", "approval"]);
 	});
 
 	it("accepts a provided contractId", async () => {

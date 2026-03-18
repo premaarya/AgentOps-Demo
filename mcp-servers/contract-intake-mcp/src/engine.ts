@@ -33,21 +33,13 @@ const CONTRACT_PATTERNS: Record<string, RegExp[]> = {
 	SOW: [/statement\s+of\s+work/i, /\bsow\b/i, /scope\s+of\s+work/i],
 	Amendment: [/amendment/i, /amended\s+to/i, /modify.*agreement/i],
 	SLA: [/service\s+level/i, /\bsla\b/i, /uptime/i],
-	"Sales Agreement": [
-		/sales\s+agreement/i,
-		/purchase\s+and\s+sale\s+agreement/i,
-		/seller\s+agrees\s+to\s+sell/i,
-	],
+	"Sales Agreement": [/sales\s+agreement/i, /purchase\s+and\s+sale\s+agreement/i, /seller\s+agrees\s+to\s+sell/i],
 	"Distribution Agreement": [
 		/distribution\s+agreement/i,
 		/appointed\s+as\s+(?:an\s+)?(?:authorized\s+)?distributor/i,
 		/right\s+to\s+distribute/i,
 	],
-	"Supply Agreement": [
-		/supply\s+agreement/i,
-		/supplier\s+shall\s+supply/i,
-		/procure(?:ment)?\s+of\s+goods/i,
-	],
+	"Supply Agreement": [/supply\s+agreement/i, /supplier\s+shall\s+supply/i, /procure(?:ment)?\s+of\s+goods/i],
 	"License Agreement": [
 		/license\s+agreement/i,
 		/licensing\s+agreement/i,
@@ -58,16 +50,8 @@ const CONTRACT_PATTERNS: Record<string, RegExp[]> = {
 		/cloud\s+services\s+agreement/i,
 		/software\s+as\s+a\s+service/i,
 	],
-	"Promissory Note": [
-		/promissory\s+note/i,
-		/promises?\s+to\s+pay/i,
-		/principal\s+sum\s+of/i,
-	],
-	"Loan Agreement": [
-		/loan\s+agreement/i,
-		/lender\s+agrees\s+to\s+lend/i,
-		/borrower\s+shall\s+repay/i,
-	],
+	"Promissory Note": [/promissory\s+note/i, /promises?\s+to\s+pay/i, /principal\s+sum\s+of/i],
+	"Loan Agreement": [/loan\s+agreement/i, /lender\s+agrees\s+to\s+lend/i, /borrower\s+shall\s+repay/i],
 	Employment: [/employment\s+agreement/i, /employee/i, /employer/i],
 	"Joint Venture": [/joint\s+venture/i, /co-venturers?/i, /profit\s+sharing/i],
 	Franchise: [/franchise\s+agreement/i, /franchisor/i, /franchisee/i],
